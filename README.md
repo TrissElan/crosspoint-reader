@@ -62,10 +62,10 @@ This fork is a minimal CJK-focused build. The following upstream features have b
 
 ```bash
 # Clone with submodules
-git clone --recursive https://github.com/TrissElan/crosspoint-reader.git
+git clone --recursive https://github.com/TrissElan/crosspoint-reader-cjk-minimized.git
 
 # Build
-cd crosspoint-reader
+cd crosspoint-reader-cjk-minimized
 pio run
 
 # Flash
