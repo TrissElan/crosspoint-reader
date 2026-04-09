@@ -17,10 +17,9 @@ class EpubReaderMenuActivity final : public Activity {
     GO_TO_PERCENT,
     AUTO_PAGE_TURN,
     ROTATE_SCREEN,
+    READER_SETTINGS,
     SCREENSHOT,
-    DISPLAY_QR,
     GO_HOME,
-    SYNC,
     DELETE_CACHE
   };
 

@@ -56,39 +56,42 @@ void EpubReaderPercentSelectionActivity::loop() {
 }
 
 void EpubReaderPercentSelectionActivity::render(RenderLock&&) {
-  renderer.clearScreen();
-
-  // Title and numeric percent value.
-  renderer.drawCenteredText(UI_12_FONT_ID, 15, tr(STR_GO_TO_PERCENT), true, EpdFontFamily::BOLD);
-
-  const std::string percentText = std::to_string(percent) + "%";
-  renderer.drawCenteredText(UI_12_FONT_ID, 90, percentText.c_str(), true, EpdFontFamily::BOLD);
-
-  // Draw slider track.
   const int screenWidth = renderer.getScreenWidth();
-  constexpr int barWidth = 360;
-  constexpr int barHeight = 16;
-  const int barX = (screenWidth - barWidth) / 2;
-  const int barY = 140;
 
-  renderer.drawRect(barX, barY, barWidth, barHeight);
+  auto drawContent = [&]() {
+    renderer.clearScreen();
 
-  // Fill slider based on percent.
-  const int fillWidth = (barWidth - 4) * percent / 100;
-  if (fillWidth > 0) {
-    renderer.fillRect(barX + 2, barY + 2, fillWidth, barHeight - 4);
-  }
+    // Title and numeric percent value.
+    renderer.drawCenteredText(UI_12_FONT_ID, 15, tr(STR_GO_TO_PERCENT), true, EpdFontFamily::BOLD);
 
-  // Draw a simple knob centered at the current percent.
-  const int knobX = barX + 2 + fillWidth - 2;
-  renderer.fillRect(knobX, barY - 4, 4, barHeight + 8, true);
+    const std::string percentText = std::to_string(percent) + "%";
+    renderer.drawCenteredText(UI_12_FONT_ID, 90, percentText.c_str(), true, EpdFontFamily::BOLD);
 
-  // Hint text for step sizes.
-  renderer.drawCenteredText(SMALL_FONT_ID, barY + 30, tr(STR_PERCENT_STEP_HINT), true);
+    // Draw slider track.
+    constexpr int barWidth = 360;
+    constexpr int barHeight = 16;
+    const int barX = (screenWidth - barWidth) / 2;
+    const int barY = 140;
 
-  // Button hints follow the current front button layout.
-  const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_SELECT), "-", "+");
-  GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+    renderer.drawRect(barX, barY, barWidth, barHeight);
 
-  renderer.displayBuffer();
+    // Fill slider based on percent.
+    const int fillWidth = (barWidth - 4) * percent / 100;
+    if (fillWidth > 0) {
+      renderer.fillRect(barX + 2, barY + 2, fillWidth, barHeight - 4);
+    }
+
+    // Draw a simple knob centered at the current percent.
+    const int knobX = barX + 2 + fillWidth - 2;
+    renderer.fillRect(knobX, barY - 4, 4, barHeight + 8, true);
+
+    // Hint text for step sizes.
+    renderer.drawCenteredText(SMALL_FONT_ID, barY + 30, tr(STR_PERCENT_STEP_HINT), true);
+
+    // Button hints follow the current front button layout.
+    const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_SELECT), "-", "+");
+    GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+  };
+  drawContent();
+  renderer.displayBufferWithAA(drawContent);
 }

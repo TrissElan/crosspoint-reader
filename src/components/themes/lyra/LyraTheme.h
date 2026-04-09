@@ -6,8 +6,8 @@ class GfxRenderer;
 
 // Lyra theme metrics (zero runtime cost)
 namespace LyraMetrics {
-constexpr ThemeMetrics values = {.batteryWidth = 16,
-                                 .batteryHeight = 12,
+constexpr ThemeMetrics values = {.batteryWidth = 24,
+                                 .batteryHeight = 18,
                                  .topPadding = 5,
                                  .batteryBarHeight = 40,
                                  .headerHeight = 84,
@@ -30,7 +30,7 @@ constexpr ThemeMetrics values = {.batteryWidth = 16,
                                  .progressBarHeight = 16,
                                  .progressBarMarginTop = 1,
                                  .statusBarHorizontalMargin = 5,
-                                 .statusBarVerticalMargin = 19,
+                                 .statusBarVerticalMargin = 27,
                                  .keyboardKeyWidth = 31,
                                  .keyboardKeyHeight = 50,
                                  .keyboardKeySpacing = 0,
@@ -42,8 +42,8 @@ class LyraTheme : public BaseTheme {
  public:
   // Component drawing methods
   //   void drawProgressBar(const GfxRenderer& renderer, Rect rect, size_t current, size_t total) override;
-  void drawBatteryLeft(const GfxRenderer& renderer, Rect rect, bool showPercentage = true) const override;
-  void drawBatteryRight(const GfxRenderer& renderer, Rect rect, bool showPercentage = true) const override;
+  void drawBattery(const GfxRenderer& renderer, Rect rect, bool showPercentage = true,
+                   bool iconOnLeft = true) const override;
   void drawHeader(const GfxRenderer& renderer, Rect rect, const char* title, const char* subtitle) const override;
   void drawSubHeader(const GfxRenderer& renderer, Rect rect, const char* label,
                      const char* rightLabel = nullptr) const override;

@@ -7,16 +7,6 @@
 #include <utility>
 #include <variant>
 
-struct WifiResult {
-  bool connected = false;
-  std::string ssid;
-  std::string ip;
-};
-
-struct KeyboardResult {
-  std::string text;
-};
-
 struct MenuResult {
   int action = -1;
   uint8_t orientation = 0;
@@ -35,23 +25,12 @@ struct PageResult {
   uint32_t page = 0;
 };
 
-struct SyncResult {
-  int spineIndex = 0;
-  int page = 0;
-};
-
-enum class NetworkMode;
-
-struct NetworkModeResult {
-  NetworkMode mode;
-};
-
 struct FootnoteResult {
   std::string href;
 };
 
-using ResultVariant = std::variant<std::monostate, WifiResult, KeyboardResult, MenuResult, ChapterResult, PercentResult,
-                                   PageResult, SyncResult, NetworkModeResult, FootnoteResult>;
+using ResultVariant = std::variant<std::monostate, MenuResult, ChapterResult, PercentResult,
+                                   PageResult, FootnoteResult>;
 
 struct ActivityResult {
   bool isCancelled = false;

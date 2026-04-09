@@ -5,7 +5,6 @@
 #include <vector>
 
 #include "CrossPointSettings.h"
-#include "KOReaderCredentialStore.h"
 #include "activities/settings/SettingsActivity.h"
 
 // Shared settings list used by both the device settings UI and the web settings API.
@@ -31,18 +30,12 @@ inline const std::vector<SettingInfo>& getSettingsList() {
           {StrId::STR_PAGES_1, StrId::STR_PAGES_5, StrId::STR_PAGES_10, StrId::STR_PAGES_15, StrId::STR_PAGES_30},
           "refreshFrequency", StrId::STR_CAT_DISPLAY),
       SettingInfo::Enum(StrId::STR_UI_THEME, &CrossPointSettings::uiTheme,
-                        {StrId::STR_THEME_CLASSIC, StrId::STR_THEME_LYRA, StrId::STR_THEME_LYRA_EXTENDED}, "uiTheme",
+                        {StrId::STR_THEME_LYRA, StrId::STR_THEME_LYRA_EXTENDED}, "uiTheme",
                         StrId::STR_CAT_DISPLAY),
       SettingInfo::Toggle(StrId::STR_SUNLIGHT_FADING_FIX, &CrossPointSettings::fadingFix, "fadingFix",
                           StrId::STR_CAT_DISPLAY),
 
       // --- Reader ---
-      SettingInfo::Enum(StrId::STR_FONT_FAMILY, &CrossPointSettings::fontFamily,
-                        {StrId::STR_BOOKERLY, StrId::STR_NOTO_SANS, StrId::STR_OPEN_DYSLEXIC}, "fontFamily",
-                        StrId::STR_CAT_READER),
-      SettingInfo::Enum(StrId::STR_FONT_SIZE, &CrossPointSettings::fontSize,
-                        {StrId::STR_SMALL, StrId::STR_MEDIUM, StrId::STR_LARGE, StrId::STR_X_LARGE}, "fontSize",
-                        StrId::STR_CAT_READER),
       SettingInfo::Enum(StrId::STR_LINE_SPACING, &CrossPointSettings::lineSpacing,
                         {StrId::STR_TIGHT, StrId::STR_NORMAL, StrId::STR_WIDE}, "lineSpacing", StrId::STR_CAT_READER),
       SettingInfo::Value(StrId::STR_SCREEN_MARGIN, &CrossPointSettings::screenMargin, {5, 40, 5}, "screenMargin",
@@ -54,6 +47,8 @@ inline const std::vector<SettingInfo>& getSettingsList() {
       SettingInfo::Toggle(StrId::STR_EMBEDDED_STYLE, &CrossPointSettings::embeddedStyle, "embeddedStyle",
                           StrId::STR_CAT_READER),
       SettingInfo::Toggle(StrId::STR_HYPHENATION, &CrossPointSettings::hyphenationEnabled, "hyphenationEnabled",
+                          StrId::STR_CAT_READER),
+      SettingInfo::Toggle(StrId::STR_CHARACTER_WRAP, &CrossPointSettings::characterWrap, "characterWrap",
                           StrId::STR_CAT_READER),
       SettingInfo::Enum(StrId::STR_ORIENTATION, &CrossPointSettings::orientation,
                         {StrId::STR_PORTRAIT, StrId::STR_LANDSCAPE_CW, StrId::STR_INVERTED, StrId::STR_LANDSCAPE_CCW},
@@ -81,45 +76,6 @@ inline const std::vector<SettingInfo>& getSettingsList() {
       SettingInfo::Toggle(StrId::STR_SHOW_HIDDEN_FILES, &CrossPointSettings::showHiddenFiles, "showHiddenFiles",
                           StrId::STR_CAT_SYSTEM),
 
-      // --- KOReader Sync (web-only, uses KOReaderCredentialStore) ---
-      SettingInfo::DynamicString(
-          StrId::STR_KOREADER_USERNAME, [] { return KOREADER_STORE.getUsername(); },
-          [](const std::string& v) {
-            KOREADER_STORE.setCredentials(v, KOREADER_STORE.getPassword());
-            KOREADER_STORE.saveToFile();
-          },
-          "koUsername", StrId::STR_KOREADER_SYNC),
-      SettingInfo::DynamicString(
-          StrId::STR_KOREADER_PASSWORD, [] { return KOREADER_STORE.getPassword(); },
-          [](const std::string& v) {
-            KOREADER_STORE.setCredentials(KOREADER_STORE.getUsername(), v);
-            KOREADER_STORE.saveToFile();
-          },
-          "koPassword", StrId::STR_KOREADER_SYNC),
-      SettingInfo::DynamicString(
-          StrId::STR_SYNC_SERVER_URL, [] { return KOREADER_STORE.getServerUrl(); },
-          [](const std::string& v) {
-            KOREADER_STORE.setServerUrl(v);
-            KOREADER_STORE.saveToFile();
-          },
-          "koServerUrl", StrId::STR_KOREADER_SYNC),
-      SettingInfo::DynamicEnum(
-          StrId::STR_DOCUMENT_MATCHING, {StrId::STR_FILENAME, StrId::STR_BINARY},
-          [] { return static_cast<uint8_t>(KOREADER_STORE.getMatchMethod()); },
-          [](uint8_t v) {
-            KOREADER_STORE.setMatchMethod(static_cast<DocumentMatchMethod>(v));
-            KOREADER_STORE.saveToFile();
-          },
-          "koMatchMethod", StrId::STR_KOREADER_SYNC),
-
-      // --- OPDS Browser (web-only, uses CrossPointSettings char arrays) ---
-      SettingInfo::String(StrId::STR_OPDS_SERVER_URL, SETTINGS.opdsServerUrl, sizeof(SETTINGS.opdsServerUrl),
-                          "opdsServerUrl", StrId::STR_OPDS_BROWSER),
-      SettingInfo::String(StrId::STR_USERNAME, SETTINGS.opdsUsername, sizeof(SETTINGS.opdsUsername), "opdsUsername",
-                          StrId::STR_OPDS_BROWSER),
-      SettingInfo::String(StrId::STR_PASSWORD, SETTINGS.opdsPassword, sizeof(SETTINGS.opdsPassword), "opdsPassword",
-                          StrId::STR_OPDS_BROWSER)
-          .withObfuscated(),
       // --- Status Bar Settings (web-only, uses StatusBarSettingsActivity) ---
       SettingInfo::Toggle(StrId::STR_CHAPTER_PAGE_COUNT, &CrossPointSettings::statusBarChapterPageCount,
                           "statusBarChapterPageCount", StrId::STR_CUSTOMISE_STATUS_BAR),

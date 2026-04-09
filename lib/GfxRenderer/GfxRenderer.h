@@ -2,8 +2,7 @@
 
 #include <EpdFontFamily.h>
 #include <HalDisplay.h>
-
-class FontCacheManager;
+#include <SdFontFamily.h>
 
 #include <cstring>
 #include <map>
@@ -42,11 +41,7 @@ class GfxRenderer {
   uint32_t frameBufferSize = HalDisplay::BUFFER_SIZE;
   std::vector<uint8_t*> bwBufferChunks;
   std::map<int, EpdFontFamily> fontMap;
-
-  // Mutable because drawText() is const but needs to delegate scan-mode
-  // recording to the (non-const) FontCacheManager. Same pragmatic compromise
-  // as before, concentrated in a single pointer instead of four fields.
-  mutable FontCacheManager* fontCacheManager_ = nullptr;
+  std::map<int, SdFontFamily*> sdFontMap;  // GfxRenderer owns these
 
   void renderChar(const EpdFontFamily& fontFamily, uint32_t cp, int* x, int* y, bool pixelState,
                   EpdFontFamily::Style style) const;
@@ -59,7 +54,10 @@ class GfxRenderer {
  public:
   explicit GfxRenderer(HalDisplay& halDisplay)
       : display(halDisplay), renderMode(BW), orientation(Portrait), fadingFix(false) {}
-  ~GfxRenderer() { freeBwBufferChunks(); }
+  ~GfxRenderer() {
+    freeBwBufferChunks();
+    for (auto& kv : sdFontMap) delete kv.second;
+  }
 
   static constexpr int VIEWABLE_MARGIN_TOP = 9;
   static constexpr int VIEWABLE_MARGIN_RIGHT = 3;
@@ -69,8 +67,10 @@ class GfxRenderer {
   // Setup
   void begin();  // must be called right after display.begin()
   void insertFont(int fontId, EpdFontFamily font);
-  void setFontCacheManager(FontCacheManager* m) { fontCacheManager_ = m; }
-  FontCacheManager* getFontCacheManager() const { return fontCacheManager_; }
+  // Insert SD card font (takes ownership). If setSdFallback=true, also sets as SD fallback.
+  void insertSdFont(int fontId, SdFontFamily* font);
+  bool hasFont(int fontId) const;
+  void removeFont(int fontId);
   const std::map<int, EpdFontFamily>& getFontMap() const { return fontMap; }
 
   // Orientation control (affects logical width/height and coordinate transforms)
@@ -150,6 +150,14 @@ class GfxRenderer {
   bool storeBwBuffer();    // Returns true if buffer was stored successfully
   void restoreBwBuffer();  // Restore and free the stored buffer
   void cleanupGrayscaleWithFrameBuffer() const;
+
+  // Display the frame buffer (BW only).
+  // The drawFn parameter is accepted but unused — kept for API compatibility
+  // so callers don't need to be changed if AA is re-enabled later.
+  template <typename DrawFn>
+  void displayBufferWithAA(DrawFn&&) {
+    displayBuffer();
+  }
 
   // Font helpers
   const uint8_t* getGlyphBitmap(const EpdFontData* fontData, const EpdGlyph* glyph) const;

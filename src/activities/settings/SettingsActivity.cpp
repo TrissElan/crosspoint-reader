@@ -4,16 +4,13 @@
 #include <Logging.h>
 
 #include "ButtonRemapActivity.h"
-#include "CalibreSettingsActivity.h"
 #include "ClearCacheActivity.h"
 #include "CrossPointSettings.h"
-#include "KOReaderSettingsActivity.h"
+#include "FontSelectionActivity.h"
 #include "LanguageSelectActivity.h"
 #include "MappedInputManager.h"
-#include "OtaUpdateActivity.h"
 #include "SettingsList.h"
 #include "StatusBarSettingsActivity.h"
-#include "activities/network/WifiSelectionActivity.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 
@@ -46,21 +43,18 @@ void SettingsActivity::onEnter() {
   // Append device-only ACTION items
   controlsSettings.insert(controlsSettings.begin(),
                           SettingInfo::Action(StrId::STR_REMAP_FRONT_BUTTONS, SettingAction::RemapFrontButtons));
-  systemSettings.push_back(SettingInfo::Action(StrId::STR_WIFI_NETWORKS, SettingAction::Network));
-  systemSettings.push_back(SettingInfo::Action(StrId::STR_KOREADER_SYNC, SettingAction::KOReaderSync));
-  systemSettings.push_back(SettingInfo::Action(StrId::STR_OPDS_BROWSER, SettingAction::OPDSBrowser));
   systemSettings.push_back(SettingInfo::Action(StrId::STR_CLEAR_READING_CACHE, SettingAction::ClearCache));
-  systemSettings.push_back(SettingInfo::Action(StrId::STR_CHECK_UPDATES, SettingAction::CheckForUpdates));
   systemSettings.push_back(SettingInfo::Action(StrId::STR_LANGUAGE, SettingAction::Language));
   readerSettings.push_back(SettingInfo::Action(StrId::STR_CUSTOMISE_STATUS_BAR, SettingAction::CustomiseStatusBar));
+  readerSettings.insert(readerSettings.begin(),
+                        SettingInfo::Action(StrId::STR_FONT_FAMILY, SettingAction::FontSelection));
 
   // Reset selection to first category
-  selectedCategoryIndex = 0;
-  selectedSettingIndex = 0;
+  selectedCategoryIndex = (initialCategory >= 0 && initialCategory < categoryCount) ? initialCategory : 0;
+  selectedSettingIndex = (initialCategory >= 0) ? 1 : 0;
 
-  // Initialize with first category (Display)
-  currentSettings = &displaySettings;
-  settingsCount = static_cast<int>(displaySettings.size());
+  // Initialize with selected category
+  enterCategory(selectedCategoryIndex);
 
   // Trigger first update
   requestUpdate();
@@ -70,6 +64,25 @@ void SettingsActivity::onExit() {
   Activity::onExit();
 
   UITheme::getInstance().reload();  // Re-apply theme in case it was changed
+}
+
+void SettingsActivity::enterCategory(int categoryIndex) {
+  selectedCategoryIndex = categoryIndex;
+  switch (categoryIndex) {
+    case 0:
+      currentSettings = &displaySettings;
+      break;
+    case 1:
+      currentSettings = &readerSettings;
+      break;
+    case 2:
+      currentSettings = &controlsSettings;
+      break;
+    case 3:
+      currentSettings = &systemSettings;
+      break;
+  }
+  settingsCount = static_cast<int>(currentSettings->size());
 }
 
 void SettingsActivity::loop() {
@@ -88,10 +101,13 @@ void SettingsActivity::loop() {
     }
   }
 
-  if (mappedInput.wasPressed(MappedInputManager::Button::Back)) {
+  if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
     if (selectedSettingIndex > 0) {
       selectedSettingIndex = 0;
       requestUpdate();
+    } else if (initialCategory >= 0) {
+      SETTINGS.saveToFile();
+      finish();
     } else {
       SETTINGS.saveToFile();
       onGoHome();
@@ -124,21 +140,7 @@ void SettingsActivity::loop() {
 
   if (hasChangedCategory) {
     selectedSettingIndex = (selectedSettingIndex == 0) ? 0 : 1;
-    switch (selectedCategoryIndex) {
-      case 0:
-        currentSettings = &displaySettings;
-        break;
-      case 1:
-        currentSettings = &readerSettings;
-        break;
-      case 2:
-        currentSettings = &controlsSettings;
-        break;
-      case 3:
-        currentSettings = &systemSettings;
-        break;
-    }
-    settingsCount = static_cast<int>(currentSettings->size());
+    enterCategory(selectedCategoryIndex);
   }
 }
 
@@ -174,23 +176,14 @@ void SettingsActivity::toggleCurrentSetting() {
       case SettingAction::CustomiseStatusBar:
         startActivityForResult(std::make_unique<StatusBarSettingsActivity>(renderer, mappedInput), resultHandler);
         break;
-      case SettingAction::KOReaderSync:
-        startActivityForResult(std::make_unique<KOReaderSettingsActivity>(renderer, mappedInput), resultHandler);
-        break;
-      case SettingAction::OPDSBrowser:
-        startActivityForResult(std::make_unique<CalibreSettingsActivity>(renderer, mappedInput), resultHandler);
-        break;
-      case SettingAction::Network:
-        startActivityForResult(std::make_unique<WifiSelectionActivity>(renderer, mappedInput, false), resultHandler);
-        break;
       case SettingAction::ClearCache:
         startActivityForResult(std::make_unique<ClearCacheActivity>(renderer, mappedInput), resultHandler);
         break;
-      case SettingAction::CheckForUpdates:
-        startActivityForResult(std::make_unique<OtaUpdateActivity>(renderer, mappedInput), resultHandler);
-        break;
       case SettingAction::Language:
         startActivityForResult(std::make_unique<LanguageSelectActivity>(renderer, mappedInput), resultHandler);
+        break;
+      case SettingAction::FontSelection:
+        startActivityForResult(std::make_unique<FontSelectionActivity>(renderer, mappedInput), resultHandler);
         break;
       case SettingAction::None:
         // Do nothing
@@ -205,55 +198,56 @@ void SettingsActivity::toggleCurrentSetting() {
 }
 
 void SettingsActivity::render(RenderLock&&) {
-  renderer.clearScreen();
-
   const auto pageWidth = renderer.getScreenWidth();
   const auto pageHeight = renderer.getScreenHeight();
-
   const auto& metrics = UITheme::getInstance().getMetrics();
 
-  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_SETTINGS_TITLE),
-                 CROSSPOINT_VERSION);
+  auto drawContent = [&]() {
+    renderer.clearScreen();
 
-  std::vector<TabInfo> tabs;
-  tabs.reserve(categoryCount);
-  for (int i = 0; i < categoryCount; i++) {
-    tabs.push_back({I18N.get(categoryNames[i]), selectedCategoryIndex == i});
-  }
-  GUI.drawTabBar(renderer, Rect{0, metrics.topPadding + metrics.headerHeight, pageWidth, metrics.tabBarHeight}, tabs,
-                 selectedSettingIndex == 0);
+    GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_SETTINGS_TITLE),
+                   CROSSPOINT_VERSION);
 
-  const auto& settings = *currentSettings;
-  GUI.drawList(
-      renderer,
-      Rect{0, metrics.topPadding + metrics.headerHeight + metrics.tabBarHeight + metrics.verticalSpacing, pageWidth,
-           pageHeight - (metrics.topPadding + metrics.headerHeight + metrics.tabBarHeight + metrics.buttonHintsHeight +
-                         metrics.verticalSpacing * 2)},
-      settingsCount, selectedSettingIndex - 1,
-      [&settings](int index) { return std::string(I18N.get(settings[index].nameId)); }, nullptr, nullptr,
-      [&settings](int i) {
-        const auto& setting = settings[i];
-        std::string valueText = "";
-        if (setting.type == SettingType::TOGGLE && setting.valuePtr != nullptr) {
-          const bool value = SETTINGS.*(setting.valuePtr);
-          valueText = value ? tr(STR_STATE_ON) : tr(STR_STATE_OFF);
-        } else if (setting.type == SettingType::ENUM && setting.valuePtr != nullptr) {
-          const uint8_t value = SETTINGS.*(setting.valuePtr);
-          valueText = I18N.get(setting.enumValues[value]);
-        } else if (setting.type == SettingType::VALUE && setting.valuePtr != nullptr) {
-          valueText = std::to_string(SETTINGS.*(setting.valuePtr));
-        }
-        return valueText;
-      },
-      true);
+    std::vector<TabInfo> tabs;
+    tabs.reserve(categoryCount);
+    for (int i = 0; i < categoryCount; i++) {
+      tabs.push_back({I18N.get(categoryNames[i]), selectedCategoryIndex == i});
+    }
+    GUI.drawTabBar(renderer, Rect{0, metrics.topPadding + metrics.headerHeight, pageWidth, metrics.tabBarHeight}, tabs,
+                   selectedSettingIndex == 0);
 
-  // Draw help text
-  const auto confirmLabel = (selectedSettingIndex == 0)
-                                ? I18N.get(categoryNames[(selectedCategoryIndex + 1) % categoryCount])
-                                : tr(STR_TOGGLE);
-  const auto labels = mappedInput.mapLabels(tr(STR_BACK), confirmLabel, tr(STR_DIR_UP), tr(STR_DIR_DOWN));
-  GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+    const auto& settings = *currentSettings;
+    GUI.drawList(
+        renderer,
+        Rect{0, metrics.topPadding + metrics.headerHeight + metrics.tabBarHeight + metrics.verticalSpacing, pageWidth,
+             pageHeight - (metrics.topPadding + metrics.headerHeight + metrics.tabBarHeight + metrics.buttonHintsHeight +
+                           metrics.verticalSpacing * 2)},
+        settingsCount, selectedSettingIndex - 1,
+        [&settings](int index) { return std::string(I18N.get(settings[index].nameId)); }, nullptr, nullptr,
+        [&settings](int i) {
+          const auto& setting = settings[i];
+          std::string valueText = "";
+          if (setting.type == SettingType::TOGGLE && setting.valuePtr != nullptr) {
+            const bool value = SETTINGS.*(setting.valuePtr);
+            valueText = value ? tr(STR_STATE_ON) : tr(STR_STATE_OFF);
+          } else if (setting.type == SettingType::ENUM && setting.valuePtr != nullptr) {
+            const uint8_t value = SETTINGS.*(setting.valuePtr);
+            valueText = I18N.get(setting.enumValues[value]);
+          } else if (setting.type == SettingType::VALUE && setting.valuePtr != nullptr) {
+            valueText = std::to_string(SETTINGS.*(setting.valuePtr));
+          }
+          return valueText;
+        },
+        true);
 
+    // Draw help text
+    const auto confirmLabel = (selectedSettingIndex == 0)
+                                  ? tr(STR_SELECT)
+                                  : tr(STR_TOGGLE);
+    const auto labels = mappedInput.mapLabels(tr(STR_BACK), confirmLabel, tr(STR_DIR_UP), tr(STR_DIR_DOWN));
+    GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+  };
+  drawContent();
   // Always use standard refresh for settings screen
-  renderer.displayBuffer();
+  renderer.displayBufferWithAA(drawContent);
 }

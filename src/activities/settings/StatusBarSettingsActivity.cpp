@@ -115,57 +115,59 @@ void StatusBarSettingsActivity::handleSelection() {
 }
 
 void StatusBarSettingsActivity::render(RenderLock&&) {
-  renderer.clearScreen();
-
   auto metrics = UITheme::getInstance().getMetrics();
   const auto pageWidth = renderer.getScreenWidth();
   const auto pageHeight = renderer.getScreenHeight();
 
-  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_CUSTOMISE_STATUS_BAR));
+  auto drawContent = [&]() {
+    renderer.clearScreen();
 
-  const int contentTop = metrics.topPadding + metrics.headerHeight + metrics.verticalSpacing;
-  const int contentHeight = pageHeight - contentTop - metrics.buttonHintsHeight - metrics.verticalSpacing * 2;
-  GUI.drawList(
-      renderer, Rect{0, contentTop, pageWidth, contentHeight}, static_cast<int>(MENU_ITEMS),
-      static_cast<int>(selectedIndex), [](int index) { return std::string(I18N.get(menuNames[index])); }, nullptr,
-      nullptr,
-      [this](int index) {
-        // Draw status for each setting
-        if (index == 0) {
-          return SETTINGS.statusBarChapterPageCount ? tr(STR_SHOW) : tr(STR_HIDE);
-        } else if (index == 1) {
-          return SETTINGS.statusBarBookProgressPercentage ? tr(STR_SHOW) : tr(STR_HIDE);
-        } else if (index == 2) {
-          return I18N.get(progressBarNames[SETTINGS.statusBarProgressBar]);
-        } else if (index == 3) {
-          return I18N.get(progressBarThicknessNames[SETTINGS.statusBarProgressBarThickness]);
-        } else if (index == 4) {
-          return I18N.get(titleNames[SETTINGS.statusBarTitle]);
-        } else if (index == 5) {
-          return SETTINGS.statusBarBattery ? tr(STR_SHOW) : tr(STR_HIDE);
-        } else {
-          return tr(STR_HIDE);
-        }
-      },
-      true);
+    GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_CUSTOMISE_STATUS_BAR));
 
-  // Draw button hints
-  const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_TOGGLE), tr(STR_DIR_UP), tr(STR_DIR_DOWN));
-  GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+    const int contentTop = metrics.topPadding + metrics.headerHeight + metrics.verticalSpacing;
+    const int contentHeight = pageHeight - contentTop - metrics.buttonHintsHeight - metrics.verticalSpacing * 2;
+    GUI.drawList(
+        renderer, Rect{0, contentTop, pageWidth, contentHeight}, static_cast<int>(MENU_ITEMS),
+        static_cast<int>(selectedIndex), [](int index) { return std::string(I18N.get(menuNames[index])); }, nullptr,
+        nullptr,
+        [this](int index) {
+          // Draw status for each setting
+          if (index == 0) {
+            return SETTINGS.statusBarChapterPageCount ? tr(STR_SHOW) : tr(STR_HIDE);
+          } else if (index == 1) {
+            return SETTINGS.statusBarBookProgressPercentage ? tr(STR_SHOW) : tr(STR_HIDE);
+          } else if (index == 2) {
+            return I18N.get(progressBarNames[SETTINGS.statusBarProgressBar]);
+          } else if (index == 3) {
+            return I18N.get(progressBarThicknessNames[SETTINGS.statusBarProgressBarThickness]);
+          } else if (index == 4) {
+            return I18N.get(titleNames[SETTINGS.statusBarTitle]);
+          } else if (index == 5) {
+            return SETTINGS.statusBarBattery ? tr(STR_SHOW) : tr(STR_HIDE);
+          } else {
+            return tr(STR_HIDE);
+          }
+        },
+        true);
 
-  std::string title;
-  if (SETTINGS.statusBarTitle == CrossPointSettings::STATUS_BAR_TITLE::BOOK_TITLE) {
-    title = tr(STR_EXAMPLE_BOOK);
-  } else if (SETTINGS.statusBarTitle == CrossPointSettings::STATUS_BAR_TITLE::CHAPTER_TITLE) {
-    title = tr(STR_EXAMPLE_CHAPTER);
-  }
+    // Draw button hints
+    const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_TOGGLE), tr(STR_DIR_UP), tr(STR_DIR_DOWN));
+    GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
 
-  GUI.drawStatusBar(renderer, 75, 8, 32, title, verticalPreviewPadding);
+    std::string title;
+    if (SETTINGS.statusBarTitle == CrossPointSettings::STATUS_BAR_TITLE::BOOK_TITLE) {
+      title = tr(STR_EXAMPLE_BOOK);
+    } else if (SETTINGS.statusBarTitle == CrossPointSettings::STATUS_BAR_TITLE::CHAPTER_TITLE) {
+      title = tr(STR_EXAMPLE_CHAPTER);
+    }
 
-  renderer.drawText(UI_10_FONT_ID, metrics.contentSidePadding,
-                    renderer.getScreenHeight() - UITheme::getInstance().getStatusBarHeight() - verticalPreviewPadding -
-                        verticalPreviewTextPadding,
-                    tr(STR_PREVIEW));
+    GUI.drawStatusBar(renderer, 75, 8, 32, title, verticalPreviewPadding);
 
-  renderer.displayBuffer();
+    renderer.drawText(UI_10_FONT_ID, metrics.contentSidePadding,
+                      renderer.getScreenHeight() - UITheme::getInstance().getStatusBarHeight() - verticalPreviewPadding -
+                          verticalPreviewTextPadding,
+                      tr(STR_PREVIEW));
+  };
+  drawContent();
+  renderer.displayBufferWithAA(drawContent);
 }

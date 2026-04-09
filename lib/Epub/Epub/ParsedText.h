@@ -18,6 +18,7 @@ class ParsedText {
   std::vector<bool> wordContinues;  // true = word attaches to previous (no space before it)
   BlockStyle blockStyle;
   bool extraParagraphSpacing;
+  bool characterWrap;
   bool hyphenationEnabled;
 
   void applyParagraphIndent();
@@ -32,11 +33,16 @@ class ParsedText {
                    const std::function<void(std::shared_ptr<TextBlock>)>& processLine, const GfxRenderer& renderer,
                    int fontId);
   std::vector<uint16_t> calculateWordWidths(const GfxRenderer& renderer, int fontId);
+  void layoutCharacterWrap(const GfxRenderer& renderer, int fontId, uint16_t viewportWidth, int spaceWidth,
+                           const std::function<void(std::shared_ptr<TextBlock>)>& processLine, bool includeLastLine);
 
  public:
-  explicit ParsedText(const bool extraParagraphSpacing, const bool hyphenationEnabled = false,
-                      const BlockStyle& blockStyle = BlockStyle())
-      : blockStyle(blockStyle), extraParagraphSpacing(extraParagraphSpacing), hyphenationEnabled(hyphenationEnabled) {}
+  explicit ParsedText(const bool extraParagraphSpacing, const bool characterWrap = false,
+                      const bool hyphenationEnabled = false, const BlockStyle& blockStyle = BlockStyle())
+      : blockStyle(blockStyle),
+        extraParagraphSpacing(extraParagraphSpacing),
+        characterWrap(characterWrap),
+        hyphenationEnabled(hyphenationEnabled) {}
   ~ParsedText() = default;
 
   void addWord(std::string word, EpdFontFamily::Style fontStyle, bool underline = false, bool attachToPrevious = false);

@@ -10,10 +10,8 @@
 
 #include "CrossPointSettings.h"
 #include "CrossPointState.h"
-#include "KOReaderCredentialStore.h"
 #include "RecentBooksStore.h"
 #include "SettingsList.h"
-#include "WifiCredentialStore.h"
 
 // Convert legacy settings.
 void applyLegacyStatusBarSettings(CrossPointSettings& settings) {
@@ -100,7 +98,7 @@ bool JsonSettingsIO::saveSettings(const CrossPointSettings& s, const char* path)
 
   for (const auto& info : getSettingsList()) {
     if (!info.key) continue;
-    // Dynamic entries (KOReader etc.) are stored in their own files — skip.
+    // Dynamic entries (ACTION types etc.) have no valuePtr/stringOffset — skip.
     if (!info.valuePtr && !info.stringOffset) continue;
 
     if (info.stringOffset) {
@@ -120,6 +118,9 @@ bool JsonSettingsIO::saveSettings(const CrossPointSettings& s, const char* path)
   doc["frontButtonConfirm"] = s.frontButtonConfirm;
   doc["frontButtonLeft"] = s.frontButtonLeft;
   doc["frontButtonRight"] = s.frontButtonRight;
+
+  // Custom font path — not in SettingsList, managed by FontSelectionActivity.
+  doc["customFontPath"] = s.customFontPath;
 
   String json;
   serializeJson(doc, json);
@@ -145,7 +146,7 @@ bool JsonSettingsIO::loadSettings(CrossPointSettings& s, const char* json, bool*
 
   for (const auto& info : getSettingsList()) {
     if (!info.key) continue;
-    // Dynamic entries (KOReader etc.) are stored in their own files — skip.
+    // Dynamic entries (ACTION types etc.) have no valuePtr/stringOffset — skip.
     if (!info.valuePtr && !info.stringOffset) continue;
 
     if (info.stringOffset) {
@@ -200,94 +201,13 @@ bool JsonSettingsIO::loadSettings(CrossPointSettings& s, const char* json, bool*
       clamp(doc["frontButtonRight"] | (uint8_t)S::FRONT_HW_RIGHT, S::FRONT_BUTTON_HARDWARE_COUNT, S::FRONT_HW_RIGHT);
   CrossPointSettings::validateFrontButtonMapping(s);
 
+  // Custom font path — not in SettingsList, managed by FontSelectionActivity.
+  const char* cfp = doc["customFontPath"] | "";
+  strncpy(s.customFontPath, cfp, sizeof(s.customFontPath) - 1);
+  s.customFontPath[sizeof(s.customFontPath) - 1] = '\0';
+
   LOG_DBG("CPS", "Settings loaded from file");
 
-  return true;
-}
-
-// ---- KOReaderCredentialStore ----
-
-bool JsonSettingsIO::saveKOReader(const KOReaderCredentialStore& store, const char* path) {
-  JsonDocument doc;
-  doc["username"] = store.getUsername();
-  doc["password_obf"] = obfuscation::obfuscateToBase64(store.getPassword());
-  doc["serverUrl"] = store.getServerUrl();
-  doc["matchMethod"] = static_cast<uint8_t>(store.getMatchMethod());
-
-  String json;
-  serializeJson(doc, json);
-  return Storage.writeFile(path, json);
-}
-
-bool JsonSettingsIO::loadKOReader(KOReaderCredentialStore& store, const char* json, bool* needsResave) {
-  if (needsResave) *needsResave = false;
-  JsonDocument doc;
-  auto error = deserializeJson(doc, json);
-  if (error) {
-    LOG_ERR("KRS", "JSON parse error: %s", error.c_str());
-    return false;
-  }
-
-  store.username = doc["username"] | std::string("");
-  bool ok = false;
-  store.password = obfuscation::deobfuscateFromBase64(doc["password_obf"] | "", &ok);
-  if (!ok || store.password.empty()) {
-    store.password = doc["password"] | std::string("");
-    if (!store.password.empty() && needsResave) *needsResave = true;
-  }
-  store.serverUrl = doc["serverUrl"] | std::string("");
-  uint8_t method = doc["matchMethod"] | (uint8_t)0;
-  store.matchMethod = static_cast<DocumentMatchMethod>(method);
-
-  LOG_DBG("KRS", "Loaded KOReader credentials for user: %s", store.username.c_str());
-  return true;
-}
-
-// ---- WifiCredentialStore ----
-
-bool JsonSettingsIO::saveWifi(const WifiCredentialStore& store, const char* path) {
-  JsonDocument doc;
-  doc["lastConnectedSsid"] = store.getLastConnectedSsid();
-
-  JsonArray arr = doc["credentials"].to<JsonArray>();
-  for (const auto& cred : store.getCredentials()) {
-    JsonObject obj = arr.add<JsonObject>();
-    obj["ssid"] = cred.ssid;
-    obj["password_obf"] = obfuscation::obfuscateToBase64(cred.password);
-  }
-
-  String json;
-  serializeJson(doc, json);
-  return Storage.writeFile(path, json);
-}
-
-bool JsonSettingsIO::loadWifi(WifiCredentialStore& store, const char* json, bool* needsResave) {
-  if (needsResave) *needsResave = false;
-  JsonDocument doc;
-  auto error = deserializeJson(doc, json);
-  if (error) {
-    LOG_ERR("WCS", "JSON parse error: %s", error.c_str());
-    return false;
-  }
-
-  store.lastConnectedSsid = doc["lastConnectedSsid"] | std::string("");
-
-  store.credentials.clear();
-  JsonArray arr = doc["credentials"].as<JsonArray>();
-  for (JsonObject obj : arr) {
-    if (store.credentials.size() >= store.MAX_NETWORKS) break;
-    WifiCredential cred;
-    cred.ssid = obj["ssid"] | std::string("");
-    bool ok = false;
-    cred.password = obfuscation::deobfuscateFromBase64(obj["password_obf"] | "", &ok);
-    if (!ok || cred.password.empty()) {
-      cred.password = obj["password"] | std::string("");
-      if (!cred.password.empty() && needsResave) *needsResave = true;
-    }
-    store.credentials.push_back(cred);
-  }
-
-  LOG_DBG("WCS", "Loaded %zu WiFi credentials from file", store.credentials.size());
   return true;
 }
 

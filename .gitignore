@@ -15,3 +15,10 @@ build
 .history/
 /.venv
 *.local*
+
+# Large binary fonts (generated / SD card fonts)
+lib/EpdFont/builtinFonts/pretendard_14.epdfont
+lib/EpdFont/builtinFonts/pretendard_16.epdfont
+lib/EpdFont/builtinFonts/source/
+lib/EpdFont/scripts/fonts/
+lib/EpdFont/scripts/sd_fonts/

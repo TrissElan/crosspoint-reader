@@ -23,3 +23,13 @@ class EpdFontFamily {
 
   const EpdFont* getFont(Style style) const;
 };
+
+// Global type alias for SD font compatibility
+using EpdFontStyle = EpdFontFamily::Style;
+
+// Global enum value aliases - allows using BOLD, ITALIC etc. without EpdFontFamily:: prefix
+constexpr auto REGULAR = EpdFontFamily::REGULAR;
+constexpr auto BOLD = EpdFontFamily::BOLD;
+constexpr auto ITALIC = EpdFontFamily::ITALIC;
+constexpr auto BOLD_ITALIC = EpdFontFamily::BOLD_ITALIC;
+constexpr auto UNDERLINE = EpdFontFamily::UNDERLINE;

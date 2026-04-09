@@ -150,9 +150,9 @@ bool CrossPointSettings::loadFromBinaryFile() {
     if (++settingsRead >= fileSettingsCount) break;
     readAndValidate(inputFile, sideButtonLayout, SIDE_BUTTON_LAYOUT_COUNT);
     if (++settingsRead >= fileSettingsCount) break;
-    readAndValidate(inputFile, fontFamily, FONT_FAMILY_COUNT);
+    readAndValidate(inputFile, fontFamily, 256);  // legacy, ignored
     if (++settingsRead >= fileSettingsCount) break;
-    readAndValidate(inputFile, fontSize, FONT_SIZE_COUNT);
+    readAndValidate(inputFile, fontSize, 256);  // legacy, ignored
     if (++settingsRead >= fileSettingsCount) break;
     readAndValidate(inputFile, lineSpacing, LINE_COMPRESSION_COUNT);
     if (++settingsRead >= fileSettingsCount) break;
@@ -169,8 +169,7 @@ bool CrossPointSettings::loadFromBinaryFile() {
     {
       std::string urlStr;
       serialization::readString(inputFile, urlStr);
-      strncpy(opdsServerUrl, urlStr.c_str(), sizeof(opdsServerUrl) - 1);
-      opdsServerUrl[sizeof(opdsServerUrl) - 1] = '\0';
+      // opdsServerUrl field removed
     }
     if (++settingsRead >= fileSettingsCount) break;
     serialization::readPod(inputFile, textAntiAliasing);
@@ -184,15 +183,13 @@ bool CrossPointSettings::loadFromBinaryFile() {
     {
       std::string usernameStr;
       serialization::readString(inputFile, usernameStr);
-      strncpy(opdsUsername, usernameStr.c_str(), sizeof(opdsUsername) - 1);
-      opdsUsername[sizeof(opdsUsername) - 1] = '\0';
+      // opdsUsername field removed
     }
     if (++settingsRead >= fileSettingsCount) break;
     {
       std::string passwordStr;
       serialization::readString(inputFile, passwordStr);
-      strncpy(opdsPassword, passwordStr.c_str(), sizeof(opdsPassword) - 1);
-      opdsPassword[sizeof(opdsPassword) - 1] = '\0';
+      // opdsPassword field removed
     }
     if (++settingsRead >= fileSettingsCount) break;
     readAndValidate(inputFile, sleepScreenCoverFilter, SLEEP_SCREEN_COVER_FILTER_COUNT);
@@ -226,38 +223,14 @@ bool CrossPointSettings::loadFromBinaryFile() {
 }
 
 float CrossPointSettings::getReaderLineCompression() const {
-  switch (fontFamily) {
-    case BOOKERLY:
+  switch (lineSpacing) {
+    case TIGHT:
+      return 0.90f;
+    case NORMAL:
     default:
-      switch (lineSpacing) {
-        case TIGHT:
-          return 0.95f;
-        case NORMAL:
-        default:
-          return 1.0f;
-        case WIDE:
-          return 1.1f;
-      }
-    case NOTOSANS:
-      switch (lineSpacing) {
-        case TIGHT:
-          return 0.90f;
-        case NORMAL:
-        default:
-          return 0.95f;
-        case WIDE:
-          return 1.0f;
-      }
-    case OPENDYSLEXIC:
-      switch (lineSpacing) {
-        case TIGHT:
-          return 0.90f;
-        case NORMAL:
-        default:
-          return 0.95f;
-        case WIDE:
-          return 1.0f;
-      }
+      return 0.95f;
+    case WIDE:
+      return 1.0f;
   }
 }
 
@@ -294,43 +267,14 @@ int CrossPointSettings::getRefreshFrequency() const {
 }
 
 int CrossPointSettings::getReaderFontId() const {
-  switch (fontFamily) {
-    case BOOKERLY:
-    default:
-      switch (fontSize) {
-        case SMALL:
-          return BOOKERLY_12_FONT_ID;
-        case MEDIUM:
-        default:
-          return BOOKERLY_14_FONT_ID;
-        case LARGE:
-          return BOOKERLY_16_FONT_ID;
-        case EXTRA_LARGE:
-          return BOOKERLY_18_FONT_ID;
-      }
-    case NOTOSANS:
-      switch (fontSize) {
-        case SMALL:
-          return NOTOSANS_12_FONT_ID;
-        case MEDIUM:
-        default:
-          return NOTOSANS_14_FONT_ID;
-        case LARGE:
-          return NOTOSANS_16_FONT_ID;
-        case EXTRA_LARGE:
-          return NOTOSANS_18_FONT_ID;
-      }
-    case OPENDYSLEXIC:
-      switch (fontSize) {
-        case SMALL:
-          return OPENDYSLEXIC_8_FONT_ID;
-        case MEDIUM:
-        default:
-          return OPENDYSLEXIC_10_FONT_ID;
-        case LARGE:
-          return OPENDYSLEXIC_12_FONT_ID;
-        case EXTRA_LARGE:
-          return OPENDYSLEXIC_14_FONT_ID;
-      }
+  if (hasCustomFont()) {
+    // Generate unique negative ID based on font path hash (djb2)
+    // Different custom fonts get different IDs for section cache invalidation
+    uint32_t hash = 5381;
+    for (const char* p = customFontPath; *p; p++) {
+      hash = ((hash << 5) + hash) + static_cast<uint8_t>(*p);
+    }
+    return -static_cast<int>((hash & 0x7FFFFFFF) | 1);
   }
+  return PRETENDARD_12_FONT_ID;
 }

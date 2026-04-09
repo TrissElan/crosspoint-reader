@@ -15,12 +15,9 @@ enum class SettingAction {
   None,
   RemapFrontButtons,
   CustomiseStatusBar,
-  KOReaderSync,
-  OPDSBrowser,
-  Network,
   ClearCache,
-  CheckForUpdates,
   Language,
+  FontSelection,
 };
 
 struct SettingInfo {
@@ -160,10 +157,13 @@ class SettingsActivity final : public Activity {
   void toggleCurrentSetting();
 
  public:
-  explicit SettingsActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
-      : Activity("Settings", renderer, mappedInput) {}
+  explicit SettingsActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, int initialCategory = -1)
+      : Activity("Settings", renderer, mappedInput), initialCategory(initialCategory) {}
   void onEnter() override;
   void onExit() override;
   void loop() override;
   void render(RenderLock&&) override;
+
+ private:
+  int initialCategory = -1;
 };

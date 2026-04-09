@@ -108,45 +108,48 @@ void ButtonRemapActivity::render(RenderLock&&) {
   const auto pageWidth = renderer.getScreenWidth();
   const auto pageHeight = renderer.getScreenHeight();
 
-  renderer.clearScreen();
+  auto drawContent = [&]() {
+    renderer.clearScreen();
 
-  GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_REMAP_FRONT_BUTTONS));
-  GUI.drawSubHeader(renderer, Rect{0, metrics.topPadding + metrics.headerHeight, pageWidth, metrics.tabBarHeight},
-                    tr(STR_REMAP_PROMPT));
+    GUI.drawHeader(renderer, Rect{0, metrics.topPadding, pageWidth, metrics.headerHeight}, tr(STR_REMAP_FRONT_BUTTONS));
+    GUI.drawSubHeader(renderer, Rect{0, metrics.topPadding + metrics.headerHeight, pageWidth, metrics.tabBarHeight},
+                      tr(STR_REMAP_PROMPT));
 
-  int topOffset = metrics.topPadding + metrics.headerHeight + metrics.tabBarHeight + metrics.verticalSpacing;
-  int contentHeight = pageHeight - topOffset - metrics.buttonHintsHeight - metrics.verticalSpacing;
-  GUI.drawList(
-      renderer, Rect{0, topOffset, pageWidth, contentHeight}, kRoleCount, currentStep,
-      [&](int index) { return getRoleName(static_cast<uint8_t>(index)); }, nullptr, nullptr,
-      [&](int index) {
-        uint8_t assignedButton = tempMapping[static_cast<uint8_t>(index)];
-        return (assignedButton == kUnassigned) ? tr(STR_UNASSIGNED) : getHardwareName(assignedButton);
-      },
-      true);
+    int topOffset = metrics.topPadding + metrics.headerHeight + metrics.tabBarHeight + metrics.verticalSpacing;
+    int contentHeight = pageHeight - topOffset - metrics.buttonHintsHeight - metrics.verticalSpacing;
+    GUI.drawList(
+        renderer, Rect{0, topOffset, pageWidth, contentHeight}, kRoleCount, currentStep,
+        [&](int index) { return getRoleName(static_cast<uint8_t>(index)); }, nullptr, nullptr,
+        [&](int index) {
+          uint8_t assignedButton = tempMapping[static_cast<uint8_t>(index)];
+          return (assignedButton == kUnassigned) ? tr(STR_UNASSIGNED) : getHardwareName(assignedButton);
+        },
+        true);
 
-  // Temporary warning banner for duplicates.
-  if (!errorMessage.empty()) {
+    // Temporary warning banner for duplicates.
+    if (!errorMessage.empty()) {
+      GUI.drawHelpText(renderer,
+                       Rect{0, pageHeight - metrics.buttonHintsHeight - metrics.contentSidePadding - 15, pageWidth, 20},
+                       errorMessage.c_str());
+    }
+
+    // Provide side button actions at the bottom of the screen (split across two lines).
     GUI.drawHelpText(renderer,
-                     Rect{0, pageHeight - metrics.buttonHintsHeight - metrics.contentSidePadding - 15, pageWidth, 20},
-                     errorMessage.c_str());
-  }
+                     Rect{0, topOffset + 4 * metrics.listRowHeight + 4 * metrics.verticalSpacing, pageWidth, 20},
+                     tr(STR_REMAP_RESET_HINT));
+    GUI.drawHelpText(renderer,
+                     Rect{0, topOffset + 4 * metrics.listRowHeight + 5 * metrics.verticalSpacing + 20, pageWidth, 20},
+                     tr(STR_REMAP_CANCEL_HINT));
 
-  // Provide side button actions at the bottom of the screen (split across two lines).
-  GUI.drawHelpText(renderer,
-                   Rect{0, topOffset + 4 * metrics.listRowHeight + 4 * metrics.verticalSpacing, pageWidth, 20},
-                   tr(STR_REMAP_RESET_HINT));
-  GUI.drawHelpText(renderer,
-                   Rect{0, topOffset + 4 * metrics.listRowHeight + 5 * metrics.verticalSpacing + 20, pageWidth, 20},
-                   tr(STR_REMAP_CANCEL_HINT));
-
-  // Live preview of logical labels under front buttons.
-  // This mirrors the on-device front button order: Back, Confirm, Left, Right.
-  GUI.drawButtonHints(renderer, labelForHardware(CrossPointSettings::FRONT_HW_BACK),
-                      labelForHardware(CrossPointSettings::FRONT_HW_CONFIRM),
-                      labelForHardware(CrossPointSettings::FRONT_HW_LEFT),
-                      labelForHardware(CrossPointSettings::FRONT_HW_RIGHT));
-  renderer.displayBuffer();
+    // Live preview of logical labels under front buttons.
+    // This mirrors the on-device front button order: Back, Confirm, Left, Right.
+    GUI.drawButtonHints(renderer, labelForHardware(CrossPointSettings::FRONT_HW_BACK),
+                        labelForHardware(CrossPointSettings::FRONT_HW_CONFIRM),
+                        labelForHardware(CrossPointSettings::FRONT_HW_LEFT),
+                        labelForHardware(CrossPointSettings::FRONT_HW_RIGHT));
+  };
+  drawContent();
+  renderer.displayBufferWithAA(drawContent);
 }
 
 void ButtonRemapActivity::applyTempMapping() {

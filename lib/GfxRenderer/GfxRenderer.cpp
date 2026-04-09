@@ -1,25 +1,10 @@
 #include "GfxRenderer.h"
 
-#include <FontDecompressor.h>
 #include <HalGPIO.h>
 #include <Logging.h>
 #include <Utf8.h>
 
-#include "FontCacheManager.h"
-
 const uint8_t* GfxRenderer::getGlyphBitmap(const EpdFontData* fontData, const EpdGlyph* glyph) const {
-  if (fontData->groups != nullptr) {
-    auto* fd = fontCacheManager_ ? fontCacheManager_->getDecompressor() : nullptr;
-    if (!fd) {
-      LOG_ERR("GFX", "Compressed font but no FontDecompressor set");
-      return nullptr;
-    }
-    uint32_t glyphIndex = static_cast<uint32_t>(glyph - fontData->glyph);
-    // For page-buffer hits the pointer is stable for the page lifetime.
-    // For hot-group hits it is valid only until the next getBitmap() call — callers
-    // must consume it (draw the glyph) before requesting another bitmap.
-    return fd->getBitmap(fontData, glyph, glyphIndex);
-  }
   return &fontData->bitmap[glyph->dataOffset];
 }
 
@@ -37,6 +22,22 @@ void GfxRenderer::begin() {
 }
 
 void GfxRenderer::insertFont(const int fontId, EpdFontFamily font) { fontMap.insert({fontId, font}); }
+
+void GfxRenderer::insertSdFont(const int fontId, SdFontFamily* font) {
+  sdFontMap.insert({fontId, font});
+}
+
+bool GfxRenderer::hasFont(int fontId) const {
+  return sdFontMap.count(fontId) > 0;
+}
+
+void GfxRenderer::removeFont(int fontId) {
+  auto it = sdFontMap.find(fontId);
+  if (it != sdFontMap.end()) {
+    delete it->second;
+    sdFontMap.erase(it);
+  }
+}
 
 // Translate logical (x,y) coordinates to physical panel coordinates based on current orientation
 // This should always be inlined for better performance
@@ -168,6 +169,55 @@ static void renderCharImpl(const GfxRenderer& renderer, GfxRenderer::RenderMode 
   }
 }
 
+// SD card font rendering - bitmap loaded on-demand from SD.
+// SD fonts use plain pixel integers for advanceX (no fp4 fixed-point).
+static void renderCharSd(const GfxRenderer& renderer, GfxRenderer::RenderMode renderMode,
+                         const SdFontFamily& fontFamily, const uint32_t cp, const int cursorX, const int cursorY,
+                         const bool pixelState, const EpdFontFamily::Style style) {
+  const EpdGlyph* glyph = fontFamily.getGlyph(cp, style);
+  if (!glyph) return;
+
+  const uint8_t* bitmap = fontFamily.getGlyphBitmap(cp, style);
+  if (!bitmap) return;
+
+  const bool is2Bit = fontFamily.is2Bit(style);
+  const int outerBase = cursorY - glyph->top;
+  const int innerBase = cursorX + glyph->left;
+
+  if (is2Bit) {
+    int pixelPosition = 0;
+    for (int glyphY = 0; glyphY < glyph->height; glyphY++) {
+      const int screenY = outerBase + glyphY;
+      for (int glyphX = 0; glyphX < glyph->width; glyphX++, pixelPosition++) {
+        const int screenX = innerBase + glyphX;
+        const uint8_t byte = bitmap[pixelPosition >> 2];
+        const uint8_t bit_index = (3 - (pixelPosition & 3)) * 2;
+        const uint8_t bmpVal = 3 - ((byte >> bit_index) & 0x3);
+        if (renderMode == GfxRenderer::BW && bmpVal < 3) {
+          renderer.drawPixel(screenX, screenY, pixelState);
+        } else if (renderMode == GfxRenderer::GRAYSCALE_MSB && (bmpVal == 1 || (gpio.deviceIsX4() && bmpVal == 2))) {
+          renderer.drawPixel(screenX, screenY, false);
+        } else if (renderMode == GfxRenderer::GRAYSCALE_LSB && bmpVal == 1) {
+          renderer.drawPixel(screenX, screenY, false);
+        }
+      }
+    }
+  } else {
+    int pixelPosition = 0;
+    for (int glyphY = 0; glyphY < glyph->height; glyphY++) {
+      const int screenY = outerBase + glyphY;
+      for (int glyphX = 0; glyphX < glyph->width; glyphX++, pixelPosition++) {
+        const int screenX = innerBase + glyphX;
+        const uint8_t byte = bitmap[pixelPosition >> 3];
+        const uint8_t bit_index = 7 - (pixelPosition & 7);
+        if ((byte >> bit_index) & 1) {
+          renderer.drawPixel(screenX, screenY, pixelState);
+        }
+      }
+    }
+  }
+}
+
 // IMPORTANT: This function is in critical rendering path and is called for every pixel. Please keep it as simple and
 // efficient as possible.
 void GfxRenderer::drawPixel(const int x, const int y, const bool state) const {
@@ -195,6 +245,16 @@ void GfxRenderer::drawPixel(const int x, const int y, const bool state) const {
 }
 
 int GfxRenderer::getTextWidth(const int fontId, const char* text, const EpdFontFamily::Style style) const {
+  // Check SD fonts first
+  {
+    const auto sdIt = sdFontMap.find(fontId);
+    if (sdIt != sdFontMap.end()) {
+      int w = 0, h = 0;
+      sdIt->second->getTextDimensions(text, &w, &h, style);
+      return w;
+    }
+  }
+
   const auto fontIt = fontMap.find(fontId);
   if (fontIt == fontMap.end()) {
     LOG_ERR("GFX", "Font %d not found", fontId);
@@ -214,21 +274,34 @@ void GfxRenderer::drawCenteredText(const int fontId, const int y, const char* te
 
 void GfxRenderer::drawText(const int fontId, const int x, const int y, const char* text, const bool black,
                            const EpdFontFamily::Style style) const {
-  const int yPos = y + getFontAscenderSize(fontId);
-  int lastBaseX = x;
-  int lastBaseAdvanceFP = 0;  // 12.4 fixed-point
-  int lastBaseTop = 0;
-  int32_t prevAdvanceFP = 0;  // 12.4 fixed-point: prev glyph's advance + next kern for snap
-
   // cannot draw a NULL / empty string
   if (text == nullptr || *text == '\0') {
     return;
   }
 
-  if (fontCacheManager_ && fontCacheManager_->isScanning()) {
-    fontCacheManager_->recordText(text, fontId, style);
-    return;
+  // Pure SD font path (fontId is registered as SD font)
+  {
+    const auto sdIt = sdFontMap.find(fontId);
+    if (sdIt != sdFontMap.end()) {
+      const SdFontFamily* sdFont = sdIt->second;
+      const int ascender = sdFont->getAscender(style);
+      const int yPos = y + ascender;
+      int cursorX = x;
+      uint32_t cp;
+      while ((cp = utf8NextCodepoint(reinterpret_cast<const uint8_t**>(&text)))) {
+        const EpdGlyph* glyph = sdFont->getGlyph(cp, style);
+        renderCharSd(*this, renderMode, *sdFont, cp, cursorX, yPos, black, style);
+        cursorX += glyph ? static_cast<int>(glyph->advanceX) : 0;
+      }
+      return;
+    }
   }
+
+  const int yPos = y + getFontAscenderSize(fontId);
+  int lastBaseX = x;
+  int lastBaseAdvanceFP = 0;  // 12.4 fixed-point
+  int lastBaseTop = 0;
+  int32_t prevAdvanceFP = 0;  // 12.4 fixed-point: prev glyph's advance + next kern for snap
 
   const auto fontIt = fontMap.find(fontId);
   if (fontIt == fontMap.end()) {
@@ -236,6 +309,7 @@ void GfxRenderer::drawText(const int fontId, const int x, const int y, const cha
     return;
   }
   const auto& font = fontIt->second;
+
   constexpr int MIN_COMBINING_GAP_PX = 1;
 
   uint32_t cp;
@@ -259,15 +333,23 @@ void GfxRenderer::drawText(const int fontId, const int x, const int y, const cha
 
     cp = font.applyLigatures(cp, text, style);
 
-    // Differential rounding: snap (previous advance + current kern) as one unit so
-    // identical character pairs always produce the same pixel step regardless of
-    // where they fall on the line.
-    if (prevCp != 0) {
-      const auto kernFP = font.getKerning(prevCp, cp, style);  // 4.4 fixed-point kern
-      lastBaseX += fp4::toPixel(prevAdvanceFP + kernFP);       // snap 12.4 fixed-point to nearest pixel
+    const EpdGlyph* glyph = font.getGlyph(cp, style);
+
+    if (!glyph) {
+      // Codepoint not found in flash font — skip
+      if (prevCp != 0) {
+        lastBaseX += fp4::toPixel(prevAdvanceFP);
+        prevAdvanceFP = 0;
+        prevCp = 0;
+      }
+      continue;
     }
 
-    const EpdGlyph* glyph = font.getGlyph(cp, style);
+    // Differential rounding: snap (previous advance + current kern) as one unit
+    if (prevCp != 0) {
+      const auto kernFP = font.getKerning(prevCp, cp, style);
+      lastBaseX += fp4::toPixel(prevAdvanceFP + kernFP);
+    }
 
     lastBaseAdvanceFP = glyph ? glyph->advanceX : 0;
     lastBaseTop = glyph ? glyph->top : 0;
@@ -279,7 +361,6 @@ void GfxRenderer::drawText(const int fontId, const int x, const int y, const cha
 }
 
 void GfxRenderer::drawLine(int x1, int y1, int x2, int y2, const bool state) const {
-  if (fontCacheManager_ && fontCacheManager_->isScanning()) return;
   if (x1 == x2) {
     if (y2 < y1) {
       std::swap(y1, y2);
@@ -592,7 +673,6 @@ void GfxRenderer::drawIcon(const uint8_t bitmap[], const int x, const int y, con
 
 void GfxRenderer::drawBitmap(const Bitmap& bitmap, const int x, const int y, const int maxWidth, const int maxHeight,
                              const float cropX, const float cropY) const {
-  if (fontCacheManager_ && fontCacheManager_->isScanning()) return;
   // For 1-bit bitmaps, use optimized 1-bit rendering path (no crop support for 1-bit)
   if (bitmap.is1Bit() && cropX == 0.0f && cropY == 0.0f) {
     drawBitmap1Bit(bitmap, x, y, maxWidth, maxHeight);
@@ -969,6 +1049,14 @@ int GfxRenderer::getScreenHeight() const {
 }
 
 int GfxRenderer::getSpaceWidth(const int fontId, const EpdFontFamily::Style style) const {
+  // SD font path
+  {
+    const auto sdIt = sdFontMap.find(fontId);
+    if (sdIt != sdFontMap.end()) {
+      const EpdGlyph* spaceGlyph = sdIt->second->getGlyph(' ', style);
+      return spaceGlyph ? static_cast<int>(spaceGlyph->advanceX) : 0;
+    }
+  }
   const auto fontIt = fontMap.find(fontId);
   if (fontIt == fontMap.end()) {
     LOG_ERR("GFX", "Font %d not found", fontId);
@@ -981,6 +1069,14 @@ int GfxRenderer::getSpaceWidth(const int fontId, const EpdFontFamily::Style styl
 
 int GfxRenderer::getSpaceAdvance(const int fontId, const uint32_t leftCp, const uint32_t rightCp,
                                  const EpdFontFamily::Style style) const {
+  // SD fonts: no kerning data, just return space advance
+  {
+    const auto sdIt = sdFontMap.find(fontId);
+    if (sdIt != sdFontMap.end()) {
+      const EpdGlyph* spaceGlyph = sdIt->second->getGlyph(' ', style);
+      return spaceGlyph ? static_cast<int>(spaceGlyph->advanceX) : 0;
+    }
+  }
   const auto fontIt = fontMap.find(fontId);
   if (fontIt == fontMap.end()) return 0;
   const auto& font = fontIt->second;
@@ -995,6 +1091,11 @@ int GfxRenderer::getSpaceAdvance(const int fontId, const uint32_t leftCp, const 
 
 int GfxRenderer::getKerning(const int fontId, const uint32_t leftCp, const uint32_t rightCp,
                             const EpdFontFamily::Style style) const {
+  // SD fonts don't have kerning data
+  {
+    const auto sdIt = sdFontMap.find(fontId);
+    if (sdIt != sdFontMap.end()) return 0;
+  }
   const auto fontIt = fontMap.find(fontId);
   if (fontIt == fontMap.end()) return 0;
   const int kernFP = fontIt->second.getKerning(leftCp, rightCp, style);  // 4.4 fixed-point
@@ -1002,6 +1103,21 @@ int GfxRenderer::getKerning(const int fontId, const uint32_t leftCp, const uint3
 }
 
 int GfxRenderer::getTextAdvanceX(const int fontId, const char* text, EpdFontFamily::Style style) const {
+  // SD font path: sum individual glyph advances (no kerning/ligatures)
+  {
+    const auto sdIt = sdFontMap.find(fontId);
+    if (sdIt != sdFontMap.end()) {
+      const SdFontFamily* sdFont = sdIt->second;
+      int totalWidth = 0;
+      uint32_t cp;
+      while ((cp = utf8NextCodepoint(reinterpret_cast<const uint8_t**>(&text)))) {
+        if (utf8IsCombiningMark(cp)) continue;
+        const EpdGlyph* glyph = sdFont->getGlyph(cp, style);
+        totalWidth += glyph ? static_cast<int>(glyph->advanceX) : 0;
+      }
+      return totalWidth;
+    }
+  }
   const auto fontIt = fontMap.find(fontId);
   if (fontIt == fontMap.end()) {
     LOG_ERR("GFX", "Font %d not found", fontId);
@@ -1035,6 +1151,10 @@ int GfxRenderer::getTextAdvanceX(const int fontId, const char* text, EpdFontFami
 }
 
 int GfxRenderer::getFontAscenderSize(const int fontId) const {
+  {
+    const auto sdIt = sdFontMap.find(fontId);
+    if (sdIt != sdFontMap.end()) return sdIt->second->getAscender();
+  }
   const auto fontIt = fontMap.find(fontId);
   if (fontIt == fontMap.end()) {
     LOG_ERR("GFX", "Font %d not found", fontId);
@@ -1045,6 +1165,10 @@ int GfxRenderer::getFontAscenderSize(const int fontId) const {
 }
 
 int GfxRenderer::getLineHeight(const int fontId) const {
+  {
+    const auto sdIt = sdFontMap.find(fontId);
+    if (sdIt != sdFontMap.end()) return sdIt->second->getAdvanceY();
+  }
   const auto fontIt = fontMap.find(fontId);
   if (fontIt == fontMap.end()) {
     LOG_ERR("GFX", "Font %d not found", fontId);
@@ -1055,6 +1179,10 @@ int GfxRenderer::getLineHeight(const int fontId) const {
 }
 
 int GfxRenderer::getTextHeight(const int fontId) const {
+  {
+    const auto sdIt = sdFontMap.find(fontId);
+    if (sdIt != sdFontMap.end()) return sdIt->second->getAscender();
+  }
   const auto fontIt = fontMap.find(fontId);
   if (fontIt == fontMap.end()) {
     LOG_ERR("GFX", "Font %d not found", fontId);

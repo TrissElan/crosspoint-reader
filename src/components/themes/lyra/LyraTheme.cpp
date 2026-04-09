@@ -18,14 +18,11 @@
 #include "components/icons/file24.h"
 #include "components/icons/folder.h"
 #include "components/icons/folder24.h"
-#include "components/icons/hotspot.h"
 #include "components/icons/image24.h"
 #include "components/icons/library.h"
 #include "components/icons/recent.h"
 #include "components/icons/settings2.h"
 #include "components/icons/text24.h"
-#include "components/icons/transfer.h"
-#include "components/icons/wifi.h"
 #include "fontIds.h"
 
 // Internal constants
@@ -45,42 +42,51 @@ int coverWidth = 0;
 
 void drawLyraBatteryIcon(const GfxRenderer& renderer, int x, int y, int battWidth, int rectHeight,
                          uint16_t percentage) {
+  // Outline: rounded rectangle body + positive terminal nub
   // Top line
-  renderer.drawLine(x + 1, y, x + battWidth - 3, y);
+  renderer.drawLine(x + 2, y, x + battWidth - 4, y);
   // Bottom line
-  renderer.drawLine(x + 1, y + rectHeight - 1, x + battWidth - 3, y + rectHeight - 1);
+  renderer.drawLine(x + 2, y + rectHeight - 1, x + battWidth - 4, y + rectHeight - 1);
   // Left line
-  renderer.drawLine(x, y + 1, x, y + rectHeight - 2);
-  // Battery end
-  renderer.drawLine(x + battWidth - 2, y + 1, x + battWidth - 2, y + rectHeight - 2);
-  renderer.drawPixel(x + battWidth - 1, y + 3);
-  renderer.drawPixel(x + battWidth - 1, y + rectHeight - 4);
-  renderer.drawLine(x + battWidth - 0, y + 4, x + battWidth - 0, y + rectHeight - 5);
+  renderer.drawLine(x, y + 2, x, y + rectHeight - 3);
+  // Left corners
+  renderer.drawPixel(x + 1, y + 1);
+  renderer.drawPixel(x + 1, y + rectHeight - 2);
+  // Right body line
+  renderer.drawLine(x + battWidth - 3, y + 1, x + battWidth - 3, y + rectHeight - 2);
+  // Positive terminal nub
+  renderer.drawPixel(x + battWidth - 2, y + 4);
+  renderer.drawPixel(x + battWidth - 2, y + rectHeight - 5);
+  renderer.drawLine(x + battWidth - 1, y + 5, x + battWidth - 1, y + rectHeight - 6);
 
   const bool charging = gpio.isUsbConnected();
 
-  // Draw bars
+  // Draw bars (3 bars, each 5px wide, 2px gap)
   if (percentage > 10 || charging) {
-    renderer.fillRect(x + 2, y + 2, 3, rectHeight - 4);
+    renderer.fillRect(x + 2, y + 2, 5, rectHeight - 4);
   }
   if (percentage > 40 || charging) {
-    renderer.fillRect(x + 6, y + 2, 3, rectHeight - 4);
+    renderer.fillRect(x + 8, y + 2, 5, rectHeight - 4);
   }
   if (percentage > 70) {
-    renderer.fillRect(x + 10, y + 2, 3, rectHeight - 4);
+    renderer.fillRect(x + 14, y + 2, 5, rectHeight - 4);
   }
 
   if (charging) {
-    const int boltX = x + 4;
+    const int boltX = x + 6;
     const int boltY = y + 2;
-    renderer.drawLine(boltX + 4, boltY + 0, boltX + 5, boltY + 0, false);
-    renderer.drawLine(boltX + 3, boltY + 1, boltX + 4, boltY + 1, false);
-    renderer.drawLine(boltX + 2, boltY + 2, boltX + 5, boltY + 2, false);
-    renderer.drawLine(boltX + 3, boltY + 3, boltX + 4, boltY + 3, false);
-    renderer.drawLine(boltX + 2, boltY + 4, boltX + 3, boltY + 4, false);
-    renderer.drawLine(boltX + 1, boltY + 5, boltX + 4, boltY + 5, false);
-    renderer.drawLine(boltX + 2, boltY + 6, boltX + 3, boltY + 6, false);
-    renderer.drawLine(boltX + 1, boltY + 7, boltX + 2, boltY + 7, false);
+    renderer.drawLine(boltX + 6, boltY + 0, boltX + 7, boltY + 0, false);
+    renderer.drawLine(boltX + 5, boltY + 1, boltX + 6, boltY + 1, false);
+    renderer.drawLine(boltX + 4, boltY + 2, boltX + 5, boltY + 2, false);
+    renderer.drawLine(boltX + 3, boltY + 3, boltX + 7, boltY + 3, false);
+    renderer.drawLine(boltX + 4, boltY + 4, boltX + 6, boltY + 4, false);
+    renderer.drawLine(boltX + 3, boltY + 5, boltX + 5, boltY + 5, false);
+    renderer.drawLine(boltX + 2, boltY + 6, boltX + 4, boltY + 6, false);
+    renderer.drawLine(boltX + 1, boltY + 7, boltX + 6, boltY + 7, false);
+    renderer.drawLine(boltX + 3, boltY + 8, boltX + 4, boltY + 8, false);
+    renderer.drawLine(boltX + 2, boltY + 9, boltX + 3, boltY + 9, false);
+    renderer.drawLine(boltX + 1, boltY + 10, boltX + 2, boltY + 10, false);
+    renderer.drawLine(boltX + 0, boltY + 11, boltX + 1, boltY + 11, false);
   }
 }
 
@@ -110,14 +116,8 @@ const uint8_t* iconForName(UIIcon icon, int size) {
         return RecentIcon;
       case UIIcon::Settings:
         return Settings2Icon;
-      case UIIcon::Transfer:
-        return TransferIcon;
       case UIIcon::Library:
         return LibraryIcon;
-      case UIIcon::Wifi:
-        return WifiIcon;
-      case UIIcon::Hotspot:
-        return HotspotIcon;
       default:
         return nullptr;
     }
@@ -126,31 +126,21 @@ const uint8_t* iconForName(UIIcon icon, int size) {
 }
 }  // namespace
 
-void LyraTheme::drawBatteryLeft(const GfxRenderer& renderer, Rect rect, const bool showPercentage) const {
-  // Left aligned: icon on left, percentage on right (reader mode)
+void LyraTheme::drawBattery(const GfxRenderer& renderer, Rect rect, const bool showPercentage,
+                            const bool iconOnLeft) const {
   const uint16_t percentage = powerManager.getBatteryPercentage();
 
   if (showPercentage) {
     const auto percentageText = std::to_string(percentage) + "%";
-    renderer.drawText(SMALL_FONT_ID, rect.x + batteryPercentSpacing + LyraMetrics::values.batteryWidth, rect.y,
-                      percentageText.c_str());
-  }
-
-  drawLyraBatteryIcon(renderer, rect.x, rect.y + 6, LyraMetrics::values.batteryWidth, rect.height, percentage);
-}
-
-void LyraTheme::drawBatteryRight(const GfxRenderer& renderer, Rect rect, const bool showPercentage) const {
-  // Right aligned: percentage on left, icon on right (UI headers)
-  const uint16_t percentage = powerManager.getBatteryPercentage();
-
-  if (showPercentage) {
-    const auto percentageText = std::to_string(percentage) + "%";
-    const int textWidth = renderer.getTextWidth(SMALL_FONT_ID, percentageText.c_str());
-    // Clear the area where we're going to draw the text to prevent ghosting
-    const auto textHeight = renderer.getTextHeight(SMALL_FONT_ID);
-    renderer.fillRect(rect.x - textWidth - batteryPercentSpacing, rect.y, textWidth, textHeight, false);
-    // Draw text to the left of the icon
-    renderer.drawText(SMALL_FONT_ID, rect.x - textWidth - batteryPercentSpacing, rect.y, percentageText.c_str());
+    if (iconOnLeft) {
+      renderer.drawText(SMALL_FONT_ID, rect.x + batteryPercentSpacing + LyraMetrics::values.batteryWidth, rect.y,
+                        percentageText.c_str());
+    } else {
+      const int textWidth = renderer.getTextWidth(SMALL_FONT_ID, percentageText.c_str());
+      const auto textHeight = renderer.getTextHeight(SMALL_FONT_ID);
+      renderer.fillRect(rect.x - textWidth - batteryPercentSpacing, rect.y, textWidth, textHeight, false);
+      renderer.drawText(SMALL_FONT_ID, rect.x - textWidth - batteryPercentSpacing, rect.y, percentageText.c_str());
+    }
   }
 
   drawLyraBatteryIcon(renderer, rect.x, rect.y + 6, LyraMetrics::values.batteryWidth, rect.height, percentage);
@@ -161,11 +151,11 @@ void LyraTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
 
   const bool showBatteryPercentage =
       SETTINGS.hideBatteryPercentage != CrossPointSettings::HIDE_BATTERY_PERCENTAGE::HIDE_ALWAYS;
-  // Position icon at right edge, drawBatteryRight will place text to the left
+  // Position icon at right edge, drawBattery will place text to the left
   const int batteryX = rect.x + rect.width - 12 - LyraMetrics::values.batteryWidth;
-  drawBatteryRight(renderer,
-                   Rect{batteryX, rect.y + 5, LyraMetrics::values.batteryWidth, LyraMetrics::values.batteryHeight},
-                   showBatteryPercentage);
+  drawBattery(renderer,
+              Rect{batteryX, rect.y + 5, LyraMetrics::values.batteryWidth, LyraMetrics::values.batteryHeight},
+              showBatteryPercentage, false);
 
   int maxTitleWidth =
       rect.width - LyraMetrics::values.contentSidePadding * 2 - (subtitle != nullptr ? maxSubtitleWidth : 0);
@@ -282,7 +272,7 @@ void LyraTheme::drawList(const GfxRenderer& renderer, Rect rect, int itemCount, 
 
   // Draw all items
   const auto pageStartIndex = selectedIndex / pageItems * pageItems;
-  int iconY = (rowSubtitle != nullptr) ? 16 : 10;
+  int iconY = (rowSubtitle != nullptr) ? 16 : 8;
   for (int i = pageStartIndex; i < itemCount && i < pageStartIndex + pageItems; i++) {
     const int itemY = rect.y + (i % pageItems) * rowHeight;
     int rowTextWidth = textWidth;
@@ -299,7 +289,7 @@ void LyraTheme::drawList(const GfxRenderer& renderer, Rect rect, int itemCount, 
 
     auto itemName = rowTitle(i);
     auto item = renderer.truncatedText(UI_10_FONT_ID, itemName.c_str(), rowTextWidth);
-    renderer.drawText(UI_10_FONT_ID, textX, itemY + 7, item.c_str(), true);
+    renderer.drawText(UI_10_FONT_ID, textX, itemY + 5, item.c_str(), true);
 
     if (rowIcon != nullptr) {
       UIIcon icon = rowIcon(i);
@@ -326,7 +316,7 @@ void LyraTheme::drawList(const GfxRenderer& renderer, Rect rect, int itemCount, 
       }
 
       renderer.drawText(UI_10_FONT_ID, rect.x + contentWidth - LyraMetrics::values.contentSidePadding - valueWidth,
-                        itemY + 6, valueText.c_str(), !(i == selectedIndex && highlightValue));
+                        itemY + 5, valueText.c_str(), !(i == selectedIndex && highlightValue));
     }
   }
 }
@@ -341,7 +331,7 @@ void LyraTheme::drawButtonHints(GfxRenderer& renderer, const char* btn1, const c
   constexpr int smallButtonHeight = 15;
   constexpr int buttonHeight = LyraMetrics::values.buttonHintsHeight;
   constexpr int buttonY = LyraMetrics::values.buttonHintsHeight;  // Distance from bottom
-  constexpr int textYOffset = 7;                                  // Distance from top of button to text baseline
+  constexpr int textYOffset = 5;                                  // Distance from top of button to text baseline
   // X3 has wider screen in portrait (528 vs 480), use more spacing
   constexpr int x4ButtonPositions[] = {58, 146, 254, 342};
   constexpr int x3ButtonPositions[] = {65, 157, 291, 383};
