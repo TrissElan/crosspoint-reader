@@ -206,9 +206,9 @@ void FontSelectionActivity::handleSelection() {
   }
   xSemaphoreGive(displayMutex);
 
-  // Now safe to use renderer directly — no competing task
+  // Now safe to use renderer directly ??no competing task
   renderer.clearScreen();
-  renderer.drawCenteredText(UI_10_FONT_ID, renderer.getScreenHeight() / 2 - 10, "Applying font...");
+  renderer.drawCenteredText(UI_12_FONT_ID, renderer.getScreenHeight() / 2 - 10, "Applying font...");
   renderer.displayBuffer();
 
   strncpy(SETTINGS.customFontPath, fontFiles[selectedIndex].c_str(), sizeof(SETTINGS.customFontPath) - 1);
@@ -257,8 +257,8 @@ void FontSelectionActivity::doRender() {
     }
 
     int currentSelectedIndex = 0;
-    if (SETTINGS.hasCustomFont()) {
-      for (size_t i = 1; i < fontFiles.size(); i++) {
+    if (SETTINGS.customFontPath[0] != '\0') {
+      for (size_t i = 0; i < fontFiles.size(); i++) {
         if (fontFiles[i] == SETTINGS.customFontPath) {
           currentSelectedIndex = static_cast<int>(i);
           break;
@@ -277,17 +277,17 @@ void FontSelectionActivity::doRender() {
       }
 
       if (isCurrentFont) {
-        renderer.drawText(UI_10_FONT_ID, 10, itemY, "*", !isHighlighted);
+        renderer.drawText(UI_12_FONT_ID, 10, itemY, "*", !isHighlighted);
       }
 
-      renderer.drawText(UI_10_FONT_ID, 35, itemY, fontNames[itemIndex].c_str(), !isHighlighted);
+      renderer.drawText(UI_12_FONT_ID, 35, itemY, fontNames[itemIndex].c_str(), !isHighlighted);
     }
 
     if (scrollOffset > 0) {
-      renderer.drawCenteredText(UI_10_FONT_ID, startY - 15, "...", true);
+      renderer.drawCenteredText(UI_12_FONT_ID, startY - 15, "...", true);
     }
     if (scrollOffset + maxVisibleItems < itemCount) {
-      renderer.drawCenteredText(UI_10_FONT_ID, startY + maxVisibleItems * lineHeight, "...", true);
+      renderer.drawCenteredText(UI_12_FONT_ID, startY + maxVisibleItems * lineHeight, "...", true);
     }
 
     const auto labels = mappedInput.mapLabels("Back", "Select", "", "");

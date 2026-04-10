@@ -44,7 +44,7 @@ void CrossPointWebServerActivity::onEnter() {
   lastHandleClientTime = 0;
   requestUpdate();
 
-  // Go directly to AP mode (hotspot) — no mode selection menu
+  // Go directly to AP mode (hotspot) ??no mode selection menu
   startAccessPoint();
 }
 
@@ -330,9 +330,9 @@ void CrossPointWebServerActivity::render(RenderLock&&) {
                         connectedSSID.c_str());
       renderServerRunning();
     } else {
-      const auto height = renderer.getLineHeight(UI_10_FONT_ID);
+      const auto height = renderer.getLineHeight(UI_12_FONT_ID);
       const auto top = (pageHeight - height) / 2;
-      renderer.drawCenteredText(UI_10_FONT_ID, top, tr(STR_STARTING_HOTSPOT));
+      renderer.drawCenteredText(UI_12_FONT_ID, top, tr(STR_STARTING_HOTSPOT));
     }
     renderer.displayBuffer();
   }
@@ -348,13 +348,13 @@ void CrossPointWebServerActivity::renderServerRunning() const {
                     connectedSSID.c_str());
 
   int startY = metrics.topPadding + metrics.headerHeight + metrics.tabBarHeight + metrics.verticalSpacing * 2;
-  int height10 = renderer.getLineHeight(UI_10_FONT_ID);
+  int height10 = renderer.getLineHeight(UI_12_FONT_ID);
   if (isApMode) {
     // AP mode display
-    renderer.drawText(UI_10_FONT_ID, metrics.contentSidePadding, startY, "Connect your device to", true,
+    renderer.drawText(UI_12_FONT_ID, metrics.contentSidePadding, startY, "Connect your device to", true,
                       EpdFontFamily::BOLD);
     startY += height10;
-    renderer.drawText(UI_10_FONT_ID, metrics.contentSidePadding, startY, "this WiFi network", true,
+    renderer.drawText(UI_12_FONT_ID, metrics.contentSidePadding, startY, "this WiFi network", true,
                       EpdFontFamily::BOLD);
     startY += height10 + metrics.verticalSpacing * 2;
 
@@ -364,13 +364,13 @@ void CrossPointWebServerActivity::renderServerRunning() const {
     QrUtils::drawQrCode(renderer, qrBoundsWifi, wifiConfig);
 
     // Show network name
-    renderer.drawText(UI_10_FONT_ID, metrics.contentSidePadding + QR_CODE_WIDTH + metrics.verticalSpacing, startY + 80,
+    renderer.drawText(UI_12_FONT_ID, metrics.contentSidePadding + QR_CODE_WIDTH + metrics.verticalSpacing, startY + 80,
                       connectedSSID.c_str());
 
     startY += QR_CODE_HEIGHT + 2 * metrics.verticalSpacing;
 
     // Show primary URL (hostname)
-    renderer.drawText(UI_10_FONT_ID, metrics.contentSidePadding, startY, tr(STR_OPEN_URL_HINT), true,
+    renderer.drawText(UI_12_FONT_ID, metrics.contentSidePadding, startY, tr(STR_OPEN_URL_HINT), true,
                       EpdFontFamily::BOLD);
     startY += height10 + metrics.verticalSpacing * 2;
 
@@ -382,18 +382,18 @@ void CrossPointWebServerActivity::renderServerRunning() const {
     QrUtils::drawQrCode(renderer, qrBoundsUrl, hostnameUrl);
 
     // Show IP address as fallback
-    renderer.drawText(UI_10_FONT_ID, metrics.contentSidePadding + QR_CODE_WIDTH + metrics.verticalSpacing, startY + 80,
+    renderer.drawText(UI_12_FONT_ID, metrics.contentSidePadding + QR_CODE_WIDTH + metrics.verticalSpacing, startY + 80,
                       hostnameUrl.c_str());
-    renderer.drawText(SMALL_FONT_ID, metrics.contentSidePadding + QR_CODE_WIDTH + metrics.verticalSpacing, startY + 100,
+    renderer.drawText(SMALL_FONT_ID, metrics.contentSidePadding + QR_CODE_WIDTH + metrics.verticalSpacing, startY + 110,
                       ipUrl.c_str());
   } else {
     startY += metrics.verticalSpacing * 2;
 
     // STA mode display (original behavior)
     // std::string ipInfo = "IP Address: " + connectedIP;
-    renderer.drawCenteredText(UI_10_FONT_ID, startY, tr(STR_OPEN_URL_HINT), true, EpdFontFamily::BOLD);
+    renderer.drawCenteredText(UI_12_FONT_ID, startY, tr(STR_OPEN_URL_HINT), true, EpdFontFamily::BOLD);
     startY += height10;
-    renderer.drawCenteredText(UI_10_FONT_ID, startY, tr(STR_SCAN_QR_HINT), true, EpdFontFamily::BOLD);
+    renderer.drawCenteredText(UI_12_FONT_ID, startY, tr(STR_SCAN_QR_HINT), true, EpdFontFamily::BOLD);
     startY += height10 + metrics.verticalSpacing * 2;
 
     // Show QR code for URL
@@ -403,7 +403,7 @@ void CrossPointWebServerActivity::renderServerRunning() const {
     startY += QR_CODE_HEIGHT + metrics.verticalSpacing * 2;
 
     // Show web server URL prominently
-    renderer.drawCenteredText(UI_10_FONT_ID, startY, webInfo.c_str(), true);
+    renderer.drawCenteredText(UI_12_FONT_ID, startY, webInfo.c_str(), true);
     startY += height10 + 5;
 
     // Also show hostname URL

@@ -225,12 +225,12 @@ bool CrossPointSettings::loadFromBinaryFile() {
 float CrossPointSettings::getReaderLineCompression() const {
   switch (lineSpacing) {
     case TIGHT:
-      return 0.90f;
+      return 0.95f;
     case NORMAL:
     default:
-      return 0.95f;
-    case WIDE:
       return 1.0f;
+    case WIDE:
+      return 1.1f;
   }
 }
 

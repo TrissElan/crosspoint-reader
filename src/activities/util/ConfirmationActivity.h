@@ -13,7 +13,7 @@ class ConfirmationActivity : public Activity {
 
   const int margin = 20;
   const int spacing = 30;
-  const int fontId = UI_10_FONT_ID;
+  const int fontId = UI_12_FONT_ID;
 
   std::string safeHeading;
   std::string safeBody;

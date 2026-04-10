@@ -118,7 +118,7 @@ void EpubReaderMenuActivity::render(RenderLock&&) {
                      std::to_string(totalPages) + std::string(tr(STR_PAGES_SEPARATOR));
     }
     progressLine += std::string(tr(STR_BOOK_PREFIX)) + std::to_string(bookProgressPercent) + "%";
-    renderer.drawCenteredText(UI_10_FONT_ID, 45, progressLine.c_str());
+    renderer.drawCenteredText(UI_12_FONT_ID, 45, progressLine.c_str());
 
     // Menu Items
     const int startY = 75 + contentY;
@@ -133,20 +133,20 @@ void EpubReaderMenuActivity::render(RenderLock&&) {
         renderer.fillRect(contentX, displayY, contentWidth - 1, lineHeight, true);
       }
 
-      renderer.drawText(UI_10_FONT_ID, contentX + 20, displayY, I18N.get(menuItems[i].labelId), !isSelected);
+      renderer.drawText(UI_12_FONT_ID, contentX + 20, displayY, I18N.get(menuItems[i].labelId), !isSelected);
 
       if (menuItems[i].action == MenuAction::ROTATE_SCREEN) {
         // Render current orientation value on the right edge of the content area.
         const char* value = I18N.get(orientationLabels[pendingOrientation]);
-        const auto width = renderer.getTextWidth(UI_10_FONT_ID, value);
-        renderer.drawText(UI_10_FONT_ID, contentX + contentWidth - 20 - width, displayY, value, !isSelected);
+        const auto width = renderer.getTextWidth(UI_12_FONT_ID, value);
+        renderer.drawText(UI_12_FONT_ID, contentX + contentWidth - 20 - width, displayY, value, !isSelected);
       }
 
       if (menuItems[i].action == MenuAction::AUTO_PAGE_TURN) {
         // Render current page turn value on the right edge of the content area.
         const auto value = pageTurnLabels[selectedPageTurnOption];
-        const auto width = renderer.getTextWidth(UI_10_FONT_ID, value);
-        renderer.drawText(UI_10_FONT_ID, contentX + contentWidth - 20 - width, displayY, value, !isSelected);
+        const auto width = renderer.getTextWidth(UI_12_FONT_ID, value);
+        renderer.drawText(UI_12_FONT_ID, contentX + contentWidth - 20 - width, displayY, value, !isSelected);
       }
     }
 
