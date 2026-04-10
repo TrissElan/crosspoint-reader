@@ -137,6 +137,10 @@ static int currentCustomFontId = 0;
 bool reloadCustomReaderFont() {
   if (currentCustomFontId != 0 && renderer.hasFont(currentCustomFontId)) {
     renderer.removeFont(currentCustomFontId);
+    currentCustomFontId = 0;
+    // Flush the shared glyph bitmap cache to reclaim heap before loading a new font.
+    // Without this, heap fragmentation prevents the 32KB inflate ring-buffer allocation.
+    SdFontData::clearCache();
   }
   const bool loaded = loadCustomReaderFont(renderer);
   currentCustomFontId = loaded ? SETTINGS.getReaderFontId() : 0;
