@@ -8,14 +8,12 @@ A CJK (Korean/Japanese) font support fork of the [CrossPoint Reader](https://git
 - **Reduced character set**: Adobe KR-0 hangul (2,780) + education hanja (1,823) + Hiragana/Katakana + Latin/Cyrillic
 - **WiFi file transfer**: built-in hotspot with web-based file browser (upload, delete, rename, move)
 - Font selection UI — choose between 6 built-in fonts
-- Flash font zero-copy optimization (~51KB RAM saved)
-- Arena-based glyph bitmap cache (32KB, lazy allocation)
+- Flash font zero-copy optimization — glyph bitmaps read directly from Flash, no RAM copy
 
 ## Changes from Upstream
 
 - **Font system overhaul**: Removed Bookerly font family (10/12/14/16/18pt × 4 styles), replaced with Pretendard JP Medium 10/12/14pt + KoPub Dotum Pro Medium 10/12/14pt embedded in Flash (2-bit greyscale, zero-copy)
-- **SdFont/SdFontFamily**: On-demand glyph loading system with arena-based bitmap cache
-- **Arena allocator**: 32KB bump-pointer arena with 512-entry open-addressing hash table replaces STL LRU cache, eliminating heap fragmentation on ESP32-C3 (229KB usable DRAM)
+- **SdFont/SdFontFamily**: Flash-only font system — intervals and glyph bitmaps read directly from Flash via `.incbin`, no heap allocation for font data
 - **FontSelectionActivity**: UI for selecting between 6 built-in fonts
 - **WiFi file transfer**: Restored from upstream with simplified hotspot-only mode (no Join Network)
 - **Bug fixes**:
@@ -30,7 +28,7 @@ This fork is a minimal CJK-focused build. The following upstream features have b
 | Category | Removed |
 |---|---|
 | **Built-in Fonts** | Bookerly (12–18pt), NotoSans (8–18pt), OpenDyslexic (8–14pt), Ubuntu (10–12pt) — all styles (regular/bold/italic/bolditalic). Replaced with Pretendard JP Medium 10/12/14pt + KoPub Dotum Pro Medium 10/12/14pt |
-| **Font System** | FontDecompressor (compressed font loading), FontCacheManager (old cache) |
+| **Font System** | FontDecompressor (compressed font loading), FontCacheManager, arena-based glyph bitmap cache (SD font support removed) |
 | **Multi-language** | 20 translation files removed — UI is English only |
 | **OTA Update** | Over-the-air firmware update |
 | **KOReader Sync** | Reading progress sync with KOReader server |

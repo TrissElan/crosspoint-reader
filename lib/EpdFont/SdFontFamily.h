@@ -22,19 +22,11 @@ class SdFontFamily {
   explicit SdFontFamily(SdFont* regular, SdFont* bold = nullptr, SdFont* italic = nullptr, SdFont* boldItalic = nullptr)
       : regular(regular), bold(bold), italic(italic), boldItalic(boldItalic), ownsPointers(false) {}
 
-  // Constructor with file paths (creates and owns SdFont objects)
-  explicit SdFontFamily(const char* regularPath, const char* boldPath = nullptr, const char* italicPath = nullptr,
-                        const char* boldItalicPath = nullptr);
-
   ~SdFontFamily();
 
   // Disable copy
   SdFontFamily(const SdFontFamily&) = delete;
   SdFontFamily& operator=(const SdFontFamily&) = delete;
-
-  // Enable move
-  SdFontFamily(SdFontFamily&& other) noexcept;
-  SdFontFamily& operator=(SdFontFamily&& other) noexcept;
 
   // Load all fonts in the family
   bool load();

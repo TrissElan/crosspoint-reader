@@ -6,23 +6,6 @@
 // SdFontFamily Implementation
 // ============================================================================
 
-SdFontFamily::SdFontFamily(const char* regularPath, const char* boldPath, const char* italicPath,
-                           const char* boldItalicPath)
-    : regular(nullptr), bold(nullptr), italic(nullptr), boldItalic(nullptr), ownsPointers(true) {
-  if (regularPath) {
-    regular = new SdFont(regularPath);
-  }
-  if (boldPath) {
-    bold = new SdFont(boldPath);
-  }
-  if (italicPath) {
-    italic = new SdFont(italicPath);
-  }
-  if (boldItalicPath) {
-    boldItalic = new SdFont(boldItalicPath);
-  }
-}
-
 SdFontFamily::~SdFontFamily() {
   if (ownsPointers) {
     delete regular;
@@ -30,43 +13,6 @@ SdFontFamily::~SdFontFamily() {
     delete italic;
     delete boldItalic;
   }
-}
-
-SdFontFamily::SdFontFamily(SdFontFamily&& other) noexcept
-    : regular(other.regular),
-      bold(other.bold),
-      italic(other.italic),
-      boldItalic(other.boldItalic),
-      ownsPointers(other.ownsPointers) {
-  other.regular = nullptr;
-  other.bold = nullptr;
-  other.italic = nullptr;
-  other.boldItalic = nullptr;
-  other.ownsPointers = false;
-}
-
-SdFontFamily& SdFontFamily::operator=(SdFontFamily&& other) noexcept {
-  if (this != &other) {
-    if (ownsPointers) {
-      delete regular;
-      delete bold;
-      delete italic;
-      delete boldItalic;
-    }
-
-    regular = other.regular;
-    bold = other.bold;
-    italic = other.italic;
-    boldItalic = other.boldItalic;
-    ownsPointers = other.ownsPointers;
-
-    other.regular = nullptr;
-    other.bold = nullptr;
-    other.italic = nullptr;
-    other.boldItalic = nullptr;
-    other.ownsPointers = false;
-  }
-  return *this;
 }
 
 bool SdFontFamily::load() {
