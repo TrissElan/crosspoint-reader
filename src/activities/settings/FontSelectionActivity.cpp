@@ -3,6 +3,7 @@
 #include <GfxRenderer.h>
 #include <HalStorage.h>
 #include <HardwareSerial.h>
+#include <I18n.h>
 #include <Logging.h>
 
 #include <cstring>
@@ -290,7 +291,7 @@ void FontSelectionActivity::doRender() {
       renderer.drawCenteredText(UI_12_FONT_ID, startY + maxVisibleItems * lineHeight, "...", true);
     }
 
-    const auto labels = mappedInput.mapLabels("Back", "Select", "", "");
+    const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_SELECT), tr(STR_DIR_UP), tr(STR_DIR_DOWN));
     GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
   };
   drawContent();
