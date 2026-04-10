@@ -36,13 +36,15 @@ SIZES = [12, 14, 16]
 
 
 def load_codepoints(filename):
-    """Load codepoints from a file (one U+XXXX per line) and return sorted list."""
+    """Load codepoints from a file (one 0xXXXX or U+XXXX per line) and return sorted list."""
     path = os.path.join(SCRIPT_DIR, filename)
     codepoints = []
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
-            if line.startswith("U+"):
+            if line.startswith("0x") or line.startswith("0X"):
+                codepoints.append(int(line, 16))
+            elif line.startswith("U+"):
                 codepoints.append(int(line[2:], 16))
     return sorted(codepoints)
 
