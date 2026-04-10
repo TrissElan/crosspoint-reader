@@ -7,6 +7,7 @@
 #include <HalStorage.h>
 #include <I18n.h>
 #include <Logging.h>
+#include <SdFont.h>
 #include <esp_system.h>
 
 #include "CrossPointSettings.h"
@@ -520,6 +521,10 @@ void EpubReaderActivity::render(RenderLock&& lock) {
                                   viewportHeight, SETTINGS.hyphenationEnabled, SETTINGS.embeddedStyle,
                                   SETTINGS.imageRendering)) {
       LOG_DBG("ERS", "Cache not found, building...");
+
+      // Release glyph cache arena before page building to ensure inflate reader
+      // can allocate its 32KB contiguous buffer for DEFLATE decompression.
+      SdFontData::releaseCache();
 
       const auto popupFn = [this]() { GUI.drawPopup(renderer, tr(STR_INDEXING)); };
 
