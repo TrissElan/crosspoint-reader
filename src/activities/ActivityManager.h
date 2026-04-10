@@ -77,6 +77,7 @@ class ActivityManager {
   void replaceActivity(std::unique_ptr<Activity>&& newActivity);
 
   // goTo... functions are convenient wrapper for replaceActivity()
+  void goToFileTransfer();
   void goToSettings();
   void goToFileBrowser(std::string path = {});
   void goToRecentBooks();

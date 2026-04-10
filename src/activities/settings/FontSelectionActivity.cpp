@@ -14,7 +14,6 @@
 #include "fontIds.h"
 
 namespace {
-constexpr const char* DEFAULT_FONT_NAME = "Pretendard (Built-in)";
 constexpr const char* CACHE_DIR = "/.crosspoint/cache";
 
 // Recursively delete a directory and its contents
@@ -123,9 +122,13 @@ void FontSelectionActivity::loadFontList() {
   fontFiles.clear();
   fontNames.clear();
 
-  // First entry is always the default font (empty path means default)
-  fontFiles.emplace_back("");
-  fontNames.emplace_back(DEFAULT_FONT_NAME);
+  // Built-in Pretendard sizes
+  fontFiles.emplace_back("builtin:12");
+  fontNames.emplace_back("Pretendard 12pt (Built-in)");
+  fontFiles.emplace_back("builtin:14");
+  fontNames.emplace_back("Pretendard 14pt (Built-in)");
+  fontFiles.emplace_back("builtin:16");
+  fontNames.emplace_back("Pretendard 16pt (Built-in)");
 
   Storage.mkdir("/.crosspoint");
   Storage.mkdir(FONTS_DIR);
@@ -133,11 +136,11 @@ void FontSelectionActivity::loadFontList() {
   scanFontsInDirectory(FONTS_DIR);
   scanFontsInDirectory(ROOT_FONTS_DIR);
 
-  LOG_DBG("FNT", "Total fonts found: %zu (including default)", fontFiles.size());
+  LOG_DBG("FNT", "Total fonts found: %zu (including built-in)", fontFiles.size());
 
   // Find currently selected font index
   selectedIndex = 0;
-  if (SETTINGS.hasCustomFont()) {
+  if (SETTINGS.customFontPath[0] != '\0') {
     for (size_t i = 1; i < fontFiles.size(); i++) {
       if (fontFiles[i] == SETTINGS.customFontPath) {
         selectedIndex = static_cast<int>(i);
@@ -208,15 +211,11 @@ void FontSelectionActivity::handleSelection() {
   renderer.drawCenteredText(UI_10_FONT_ID, renderer.getScreenHeight() / 2 - 10, "Applying font...");
   renderer.displayBuffer();
 
-  if (selectedIndex == 0) {
-    SETTINGS.customFontPath[0] = '\0';
-  } else {
-    strncpy(SETTINGS.customFontPath, fontFiles[selectedIndex].c_str(), sizeof(SETTINGS.customFontPath) - 1);
-    SETTINGS.customFontPath[sizeof(SETTINGS.customFontPath) - 1] = '\0';
-  }
+  strncpy(SETTINGS.customFontPath, fontFiles[selectedIndex].c_str(), sizeof(SETTINGS.customFontPath) - 1);
+  SETTINGS.customFontPath[sizeof(SETTINGS.customFontPath) - 1] = '\0';
 
   SETTINGS.saveToFile();
-  LOG_DBG("FNT", "Font selected: %s", selectedIndex == 0 ? "default" : SETTINGS.customFontPath);
+  LOG_DBG("FNT", "Font selected: %s", SETTINGS.customFontPath);
 
   reloadCustomReaderFont();
   invalidateReaderCaches();

@@ -267,6 +267,11 @@ int CrossPointSettings::getRefreshFrequency() const {
 }
 
 int CrossPointSettings::getReaderFontId() const {
+  // Built-in size variants
+  if (strcmp(customFontPath, "builtin:12") == 0) return PRETENDARD_12_FONT_ID;
+  if (strcmp(customFontPath, "builtin:14") == 0) return PRETENDARD_14_FONT_ID;
+  if (strcmp(customFontPath, "builtin:16") == 0) return PRETENDARD_16_FONT_ID;
+
   if (hasCustomFont()) {
     // Generate unique negative ID based on font path hash (djb2)
     // Different custom fonts get different IDs for section cache invalidation

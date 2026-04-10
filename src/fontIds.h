@@ -1,12 +1,12 @@
-// All fonts use the embedded Pretendard JP 12pt (2-bit) epdfont.
-// A single font ID is shared across all UI and reader contexts.
+// Embedded Pretendard JP fonts (2-bit) in Flash via .incbin assembly.
+// Zero-copy: intervals read directly from Flash, no RAM allocation.
 #pragma once
 
-// Pretendard JP 12pt – embedded in Flash via .incbin assembly.
-// Used for all UI and EPUB reader rendering.
 #define PRETENDARD_12_FONT_ID (-800000012)
+#define PRETENDARD_14_FONT_ID (-800000014)
+#define PRETENDARD_16_FONT_ID (-800000016)
 
-// Aliases so existing call-sites compile without changes
+// Aliases for UI contexts
 #define UI_10_FONT_ID  PRETENDARD_12_FONT_ID
 #define UI_12_FONT_ID  PRETENDARD_12_FONT_ID
 #define SMALL_FONT_ID  PRETENDARD_12_FONT_ID

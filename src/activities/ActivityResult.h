@@ -7,6 +7,16 @@
 #include <utility>
 #include <variant>
 
+struct WifiResult {
+  bool connected = false;
+  std::string ssid;
+  std::string ip;
+};
+
+struct KeyboardResult {
+  std::string text;
+};
+
 struct MenuResult {
   int action = -1;
   uint8_t orientation = 0;
@@ -29,8 +39,15 @@ struct FootnoteResult {
   std::string href;
 };
 
+enum class NetworkMode;
+
+struct NetworkModeResult {
+  NetworkMode mode;
+};
+
 using ResultVariant = std::variant<std::monostate, MenuResult, ChapterResult, PercentResult,
-                                   PageResult, FootnoteResult>;
+                                   PageResult, FootnoteResult, WifiResult, KeyboardResult,
+                                   NetworkModeResult>;
 
 struct ActivityResult {
   bool isCancelled = false;

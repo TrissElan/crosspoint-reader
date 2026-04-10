@@ -2,6 +2,7 @@
 #include <HalStorage.h>
 
 #include <cstdint>
+#include <cstring>
 #include <iosfwd>
 
 class CrossPointSettings {
@@ -207,7 +208,9 @@ class CrossPointSettings {
 
   // Custom SD font path (empty = use default NotoSansCJK 12pt)
   char customFontPath[128] = {};
-  bool hasCustomFont() const { return customFontPath[0] != '\0'; }
+  bool hasCustomFont() const {
+    return customFontPath[0] != '\0' && strncmp(customFontPath, "builtin:", 8) != 0;
+  }
 
   // If count_only is true, returns the number of settings items that would be written.
   uint8_t writeSettings(FsFile& file, bool count_only = false) const;

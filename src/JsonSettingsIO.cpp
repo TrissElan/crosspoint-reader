@@ -12,6 +12,7 @@
 #include "CrossPointState.h"
 #include "RecentBooksStore.h"
 #include "SettingsList.h"
+#include "WifiCredentialStore.h"
 
 // Convert legacy settings.
 void applyLegacyStatusBarSettings(CrossPointSettings& settings) {
@@ -208,6 +209,54 @@ bool JsonSettingsIO::loadSettings(CrossPointSettings& s, const char* json, bool*
 
   LOG_DBG("CPS", "Settings loaded from file");
 
+  return true;
+}
+
+// ---- WifiCredentialStore ----
+
+bool JsonSettingsIO::saveWifi(const WifiCredentialStore& store, const char* path) {
+  JsonDocument doc;
+  doc["lastConnectedSsid"] = store.getLastConnectedSsid();
+
+  JsonArray arr = doc["credentials"].to<JsonArray>();
+  for (const auto& cred : store.getCredentials()) {
+    JsonObject obj = arr.add<JsonObject>();
+    obj["ssid"] = cred.ssid;
+    obj["password_obf"] = obfuscation::obfuscateToBase64(cred.password);
+  }
+
+  String json;
+  serializeJson(doc, json);
+  return Storage.writeFile(path, json);
+}
+
+bool JsonSettingsIO::loadWifi(WifiCredentialStore& store, const char* json, bool* needsResave) {
+  if (needsResave) *needsResave = false;
+  JsonDocument doc;
+  auto error = deserializeJson(doc, json);
+  if (error) {
+    LOG_ERR("WCS", "JSON parse error: %s", error.c_str());
+    return false;
+  }
+
+  store.lastConnectedSsid = doc["lastConnectedSsid"] | std::string("");
+
+  store.credentials.clear();
+  JsonArray arr = doc["credentials"].as<JsonArray>();
+  for (JsonObject obj : arr) {
+    if (store.credentials.size() >= store.MAX_NETWORKS) break;
+    WifiCredential cred;
+    cred.ssid = obj["ssid"] | std::string("");
+    bool ok = false;
+    cred.password = obfuscation::deobfuscateFromBase64(obj["password_obf"] | "", &ok);
+    if (!ok || cred.password.empty()) {
+      cred.password = obj["password"] | std::string("");
+      if (!cred.password.empty() && needsResave) *needsResave = true;
+    }
+    store.credentials.push_back(cred);
+  }
+
+  LOG_DBG("WCS", "Loaded %zu WiFi credentials from file", store.credentials.size());
   return true;
 }
 

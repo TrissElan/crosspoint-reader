@@ -30,13 +30,22 @@ MappedInputManager mappedInputManager(gpio);
 GfxRenderer renderer(display);
 ActivityManager activityManager(renderer, mappedInputManager);
 
-// Pretendard 12pt (2-bit) embedded in Flash via .incbin assembly.
+// Pretendard 12/14/16pt (2-bit) embedded in Flash via .incbin assembly.
+// Zero-copy: intervals read directly from Flash, no RAM allocation for font data.
 extern const uint8_t _binary_pretendard_12_epdfont_start[];
 extern const uint8_t _binary_pretendard_12_epdfont_end[];
+extern const uint8_t _binary_pretendard_14_epdfont_start[];
+extern const uint8_t _binary_pretendard_14_epdfont_end[];
+extern const uint8_t _binary_pretendard_16_epdfont_start[];
+extern const uint8_t _binary_pretendard_16_epdfont_end[];
 
-// Single global SdFont / SdFontFamily used for all UI and reader rendering.
-SdFont* gCjkFont = nullptr;
-SdFontFamily* gCjkFontFamily = nullptr;
+// Global SdFont / SdFontFamily for each embedded size.
+SdFont* gCjkFont12 = nullptr;
+SdFontFamily* gCjkFontFamily12 = nullptr;
+SdFont* gCjkFont14 = nullptr;
+SdFontFamily* gCjkFontFamily14 = nullptr;
+SdFont* gCjkFont16 = nullptr;
+SdFontFamily* gCjkFontFamily16 = nullptr;
 
 // Custom reader font loaded from SD card by FontSelectionActivity
 #include "FontManager.h"
@@ -155,19 +164,26 @@ void setupDisplayAndFonts() {
   activityManager.begin();
   LOG_DBG("MAIN", "Display initialized");
 
-  // Load Pretendard 12pt (2-bit) from Flash-embedded binary
-  size_t cjkSize = _binary_pretendard_12_epdfont_end -
-                   _binary_pretendard_12_epdfont_start;
-  gCjkFont = new SdFont(_binary_pretendard_12_epdfont_start, cjkSize);
-  if (!gCjkFont->load()) {
-    LOG_ERR("MAIN", "Failed to load embedded Pretendard font!");
-  }
-  gCjkFontFamily = new SdFontFamily(gCjkFont);
+  // Load Pretendard 12/14/16pt (2-bit) from Flash — zero-copy, no interval RAM allocation
+  auto loadEmbeddedFont = [](const uint8_t* start, const uint8_t* end,
+                              SdFont*& font, SdFontFamily*& family,
+                              int fontId, const char* label) {
+    size_t sz = end - start;
+    font = new SdFont(start, sz);
+    if (!font->load()) {
+      LOG_ERR("MAIN", "Failed to load embedded %s", label);
+      return;
+    }
+    family = new SdFontFamily(font);
+    renderer.insertSdFont(fontId, family);
+  };
 
-  // Register the single font under all IDs used throughout the UI and reader
-  renderer.insertSdFont(PRETENDARD_12_FONT_ID, gCjkFontFamily);
-  // UI_10_FONT_ID and UI_12_FONT_ID and SMALL_FONT_ID are all aliases of
-  // PRETENDARD_12_FONT_ID in fontIds.h, so no additional insertions needed.
+  loadEmbeddedFont(_binary_pretendard_12_epdfont_start, _binary_pretendard_12_epdfont_end,
+                   gCjkFont12, gCjkFontFamily12, PRETENDARD_12_FONT_ID, "Pretendard 12pt");
+  loadEmbeddedFont(_binary_pretendard_14_epdfont_start, _binary_pretendard_14_epdfont_end,
+                   gCjkFont14, gCjkFontFamily14, PRETENDARD_14_FONT_ID, "Pretendard 14pt");
+  loadEmbeddedFont(_binary_pretendard_16_epdfont_start, _binary_pretendard_16_epdfont_end,
+                   gCjkFont16, gCjkFontFamily16, PRETENDARD_16_FONT_ID, "Pretendard 16pt");
 
   loadCustomReaderFont(renderer);
   currentCustomFontId = SETTINGS.hasCustomFont() ? SETTINGS.getReaderFontId() : 0;

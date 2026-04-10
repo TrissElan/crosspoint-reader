@@ -19,7 +19,7 @@
 #include "fontIds.h"
 
 int HomeActivity::getMenuItemCount() const {
-  int count = 3;  // File Browser, Recents, Settings
+  int count = 4;  // File Browser, Recents, File Transfer, Settings
   if (!recentBooks.empty()) {
     count += recentBooks.size();
   }
@@ -165,6 +165,7 @@ void HomeActivity::loop() {
     int menuSelectedIndex = selectorIndex - static_cast<int>(recentBooks.size());
     const int fileBrowserIdx = idx++;
     const int recentsIdx = idx++;
+    const int fileTransferIdx = idx++;
     const int settingsIdx = idx;
 
     if (selectorIndex < recentBooks.size()) {
@@ -173,6 +174,8 @@ void HomeActivity::loop() {
       onFileBrowserOpen();
     } else if (menuSelectedIndex == recentsIdx) {
       onRecentsOpen();
+    } else if (menuSelectedIndex == fileTransferIdx) {
+      onFileTransferOpen();
     } else if (menuSelectedIndex == settingsIdx) {
       onSettingsOpen();
     }
@@ -195,8 +198,9 @@ void HomeActivity::render(RenderLock&&) {
                             std::bind(&HomeActivity::storeCoverBuffer, this));
 
     // Build menu items dynamically
-    std::vector<const char*> menuItems = {tr(STR_BROWSE_FILES), tr(STR_MENU_RECENT_BOOKS), tr(STR_SETTINGS_TITLE)};
-    std::vector<UIIcon> menuIcons = {Folder, Recent, Settings};
+    std::vector<const char*> menuItems = {tr(STR_BROWSE_FILES), tr(STR_MENU_RECENT_BOOKS), tr(STR_FILE_TRANSFER),
+                                           tr(STR_SETTINGS_TITLE)};
+    std::vector<UIIcon> menuIcons = {Folder, Recent, Wifi, Settings};
 
     GUI.drawButtonMenu(
         renderer,
@@ -227,5 +231,7 @@ void HomeActivity::onSelectBook(const std::string& path) { activityManager.goToR
 void HomeActivity::onFileBrowserOpen() { activityManager.goToFileBrowser(); }
 
 void HomeActivity::onRecentsOpen() { activityManager.goToRecentBooks(); }
+
+void HomeActivity::onFileTransferOpen() { activityManager.goToFileTransfer(); }
 
 void HomeActivity::onSettingsOpen() { activityManager.goToSettings(); }

@@ -22,6 +22,7 @@ class HomeActivity final : public Activity {
   void onSelectBook(const std::string& path);
   void onFileBrowserOpen();
   void onRecentsOpen();
+  void onFileTransferOpen();
   void onSettingsOpen();
 
   int getMenuItemCount() const;
