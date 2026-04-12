@@ -7,18 +7,13 @@ A CJK (Korean/Japanese) font support fork of the [CrossPoint Reader](https://git
 - **Pretendard JP 10/12/14pt** + **KoPub Dotum 10/12/14pt** embedded in Flash (2-bit antialiased, zero-copy)
 - **Reduced character set**: Adobe KR-0 hangul (2,780) + education hanja (1,823) + Hiragana/Katakana + Latin/Cyrillic
 - **WiFi file transfer**: built-in hotspot with web-based file browser (upload, delete, rename, move)
-- Font selection UI — choose between 6 built-in fonts
 - Flash font zero-copy optimization — glyph bitmaps read directly from Flash, no RAM copy
 
 ## Changes from Upstream
 
-- **Font system overhaul**: Removed Bookerly font family (10/12/14/16/18pt × 4 styles), replaced with Pretendard JP Medium 10/12/14pt + KoPub Dotum Pro Medium 10/12/14pt embedded in Flash (2-bit greyscale, zero-copy)
-- **SdFont/SdFontFamily**: Flash-only font system — intervals and glyph bitmaps read directly from Flash via `.incbin`, no heap allocation for font data
-- **FontSelectionActivity**: UI for selecting between 6 built-in fonts
-- **WiFi file transfer**: Restored from upstream with simplified hotspot-only mode (no Join Network)
-- **Bug fixes**:
-  - Settings Back button event leak to reader
-  - Home screen Settings unreachable (menu item count off-by-one)
+- **Font system overhaul**: Replaced Bookerly/NotoSans/OpenDyslexic/Ubuntu with Pretendard JP Medium 10/12/14pt + KoPub Dotum Pro Medium 10/12/14pt embedded in Flash (2-bit greyscale, zero-copy)
+- **Theme**: Simplified to single Lyra theme — removed Lyra3CoversTheme variant and unused icon assets
+- **WiFi file transfer**: Hotspot-only mode (no Join Network option)
 
 ## Removed from Upstream
 
@@ -26,15 +21,13 @@ This fork is a minimal CJK-focused build. The following upstream features have b
 
 | Category | Removed |
 |---|---|
-| **Built-in Fonts** | Bookerly (12–18pt), NotoSans (8–18pt), OpenDyslexic (8–14pt), Ubuntu (10–12pt) — all styles (regular/bold/italic/bolditalic). Replaced with Pretendard JP Medium 10/12/14pt + KoPub Dotum Pro Medium 10/12/14pt |
-| **Font System** | FontDecompressor (compressed font loading), FontCacheManager, arena-based glyph bitmap cache (SD font support removed) |
 | **Multi-language** | 20 translation files removed — UI is English only |
 | **OTA Update** | Over-the-air firmware update |
 | **KOReader Sync** | Reading progress sync with KOReader server |
 | **OPDS Catalog** | OPDS book browser and parser |
 | **TXT Reader** | Plain text file reading |
 | **XTC Reader** | XTC format support |
-| **Calibre / WebDAV** | Calibre integration, WebDAV sync |
+| **Calibre / WebDAV** | Calibre integration, WebDAV file sync |
 
 ### What Still Works
 
@@ -72,9 +65,11 @@ To regenerate from source TTF/OTF (requires `freetype-py`):
 
 ```bash
 cd lib/EpdFont/scripts
-python generate_pretendard_font.py    # Pretendard JP 10/12/14pt
-python generate_kopub_font.py         # KoPub Dotum 10/12/14pt
+python generate_cjk_font.py <font_file>        # e.g. PretendardJP-Medium.otf → pretendard_10/12/14.epdfont
+python generate_cjk_font.py <font_file> 10 12  # specific sizes only
 ```
+
+Source font files go in `lib/EpdFont/builtinFonts/source/`.
 
 ## Credits
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate Pretendard JP 2-bit epdfont files (12pt, 14pt) for Flash embedding.
+Generate 2-bit epdfont files for Flash embedding.
 
 Covers:
   - Basic Latin, Latin-1, Latin Extended-A, Cyrillic, Punctuation, Arrows, Math
@@ -11,12 +11,14 @@ Covers:
   - CJK Unified Ideographs: 한문교육용 기초한자 (~1,800 from edu_hanja_1800.txt)
 
 Usage:
-    python generate_pretendard_font.py          # all sizes
-    python generate_pretendard_font.py 14       # single size
-    python generate_pretendard_font.py 12       # single size
+    python generate_cjk_font.py <font_file> [size ...]
+
+    <font_file>  Path to the OTF/TTF source font file.
+    [size ...]   Optional list of point sizes to generate (default: 10 12 14).
 
 Output:
-    ../builtinFonts/pretendard_{size}.epdfont
+    ../builtinFonts/{stem}_{size}.epdfont
+    where {stem} is the font filename without extension.
 """
 
 import sys
@@ -27,12 +29,9 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ttf_to_epdfont import convert_ttf_to_epdfont  # noqa: E402
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-FONT_FILE = os.path.join(
-    SCRIPT_DIR, "..", "builtinFonts", "source", "PretendardJP-Medium.otf"
-)
 BUILTIN_DIR = os.path.join(SCRIPT_DIR, "..", "builtinFonts")
 
-SIZES = [10, 12, 14]
+DEFAULT_SIZES = [10, 12, 14]
 
 
 def load_codepoints(filename):
@@ -72,30 +71,38 @@ KR0_HANGUL = load_codepoints("kr0_hangul.txt")
 EDU_HANJA = load_codepoints("edu_hanja_1800.txt")
 
 # Additional Unicode intervals beyond the converter's defaults.
-# The converter already includes Basic Latin / Latin-1 / Latin Extended-A /
-# Cyrillic / Punctuation / Arrows / Math / Currency by default.
 INTERVALS = [
     "0x3000,0x303F",   # CJK Symbols and Punctuation
     "0x3040,0x309F",   # Hiragana
     "0x30A0,0x30FF",   # Katakana
     "0x31F0,0x31FF",   # Katakana Phonetic Extensions
-    "0x3131,0x314E",   # Hangul Compatibility Jamo (consonants area, 30 codepoints)
+    "0x3131,0x314E",   # Hangul Compatibility Jamo (consonants area)
 ] + codepoints_to_intervals(KR0_HANGUL) + codepoints_to_intervals(EDU_HANJA)
 
 
 def main():
-    if not os.path.exists(FONT_FILE):
-        print(f"ERROR: Font file not found: {FONT_FILE}", file=sys.stderr)
+    if len(sys.argv) < 2:
+        print(f"Usage: python {os.path.basename(__file__)} <font_file> [size ...]", file=sys.stderr)
         sys.exit(1)
 
-    sizes = SIZES
-    if len(sys.argv) > 1:
-        sizes = [int(s) for s in sys.argv[1:]]
+    font_file = sys.argv[1]
+    if not os.path.isabs(font_file):
+        font_file = os.path.abspath(font_file)
+
+    if not os.path.exists(font_file):
+        print(f"ERROR: Font file not found: {font_file}", file=sys.stderr)
+        sys.exit(1)
+
+    stem = os.path.splitext(os.path.basename(font_file))[0]
+
+    sizes = DEFAULT_SIZES
+    if len(sys.argv) > 2:
+        sizes = [int(s) for s in sys.argv[2:]]
 
     total_bytes = 0
     for size in sizes:
-        output = os.path.join(BUILTIN_DIR, f"pretendard_{size}.epdfont")
-        print(f"Font   : {os.path.basename(FONT_FILE)}")
+        output = os.path.join(BUILTIN_DIR, f"{stem}_{size}.epdfont")
+        print(f"Font   : {os.path.basename(font_file)}")
         print(f"Size   : {size}pt")
         print(f"Mode   : 2-bit greyscale")
         print(f"Output : {output}")
@@ -103,8 +110,8 @@ def main():
 
         t0 = time.time()
         convert_ttf_to_epdfont(
-            font_files=[FONT_FILE],
-            font_name="Pretendard",
+            font_files=[font_file],
+            font_name=stem,
             size=size,
             output_path=output,
             additional_intervals=INTERVALS,

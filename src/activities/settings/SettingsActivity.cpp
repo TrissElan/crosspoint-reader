@@ -101,7 +101,7 @@ void SettingsActivity::loop() {
     }
   }
 
-  if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
+  if (mappedInput.wasPressed(MappedInputManager::Button::Back)) {
     if (selectedSettingIndex > 0) {
       selectedSettingIndex = 0;
       requestUpdate();

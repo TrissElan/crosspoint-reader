@@ -42,6 +42,15 @@ bool CrossPointSettings::loadFromFile() {
     if (!json.isEmpty()) {
       bool resave = false;
       bool result = JsonSettingsIO::loadSettings(*this, json.c_str(), &resave);
+      // Migrate old sleepScreen values: COVER(3) becomes BLANK(3), old BLANK(4) → new BLANK(3),
+      // COVER_CUSTOM(5) → DARK(0).
+      if (sleepScreen == 4) {
+        sleepScreen = CrossPointSettings::SLEEP_SCREEN_MODE::BLANK;
+        resave = true;
+      } else if (sleepScreen >= SLEEP_SCREEN_MODE_COUNT) {
+        sleepScreen = CrossPointSettings::SLEEP_SCREEN_MODE::DARK;
+        resave = true;
+      }
       if (result && resave) {
         if (saveToFile()) {
           LOG_DBG("CPS", "Resaved settings to update format");
