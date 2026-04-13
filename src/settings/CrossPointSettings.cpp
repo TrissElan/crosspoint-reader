@@ -67,13 +67,17 @@ bool CrossPointSettings::loadFromFile() {
 
 float CrossPointSettings::getReaderLineCompression() const {
   switch (lineSpacing) {
-    case TIGHT:
+    case LS_095:
       return 0.95f;
-    case NORMAL:
+    case LS_100:
     default:
       return 1.0f;
-    case WIDE:
+    case LS_110:
       return 1.1f;
+    case LS_120:
+      return 1.2f;
+    case LS_130:
+      return 1.3f;
   }
 }
 
