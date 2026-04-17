@@ -116,6 +116,10 @@ def main():
             output_path=output,
             additional_intervals=INTERVALS,
             is_2bit=True,
+            # CFF-based Korean/CJK fonts (KoPub, Pretendard, Noto CJK) ship with
+            # weak or no native TrueType hints; the FreeType auto-hinter gives
+            # noticeably cleaner stems at 10/12/14 pt on e-ink.
+            force_autohint=True,
         )
         elapsed = time.time() - t0
 

@@ -27,18 +27,85 @@ def norm_floor(val):
 def norm_ceil(val):
     return int(math.ceil(val / (1 << 6)))
 
-def load_glyph(font_stack, code_point):
+def norm_round(val):
+    """Round a 26.6 fixed-point value to the nearest integer pixel."""
+    return int(math.floor(val / (1 << 6) + 0.5))
+
+def load_glyph(font_stack, code_point, load_flags):
     face_index = 0
     while face_index < len(font_stack):
         face = font_stack[face_index]
         glyph_index = face.get_char_index(code_point)
         if glyph_index > 0:
-            face.load_glyph(glyph_index, freetype.FT_LOAD_RENDER)
+            face.load_glyph(glyph_index, load_flags)
             return face
         face_index += 1
     return None
 
-def convert_ttf_to_epdfont(font_files, font_name, size, output_path, additional_intervals=None, is_2bit=False):
+def quantize_2bit(v):
+    """Quantize 8-bit grayscale (0..255) directly to 2-bit (0..3) using evenly
+    distributed thresholds (nearest of 0/85/170/255). Avoids the cumulative
+    error of the legacy 8 -> 4 -> 2 bit truncation pipeline."""
+    if v >= 213:
+        return 3
+    if v >= 128:
+        return 2
+    if v >= 43:
+        return 1
+    return 0
+
+def quantize_1bit(v):
+    """Quantize 8-bit grayscale to 1-bit using the standard midpoint."""
+    return 1 if v >= 128 else 0
+
+def pack_2bit(bitmap):
+    """Pack an 8-bit FreeType grayscale bitmap into 2-bit, MSB first, 4 px/byte.
+    Packs across row boundaries to match the renderer's pixelPosition layout."""
+    width = bitmap.width
+    rows = bitmap.rows
+    pitch = bitmap.pitch
+    buf = bitmap.buffer
+    pixels = []
+    px = 0
+    total = width * rows
+    for y in range(rows):
+        row_offset = y * pitch
+        for x in range(width):
+            v = buf[row_offset + x] if row_offset + x < len(buf) else 0
+            px = (px << 2) | quantize_2bit(v)
+            if (y * width + x) % 4 == 3:
+                pixels.append(px)
+                px = 0
+    rem = total % 4
+    if rem != 0:
+        px <<= (4 - rem) * 2
+        pixels.append(px)
+    return pixels
+
+def pack_1bit(bitmap):
+    """Pack an 8-bit FreeType grayscale bitmap into 1-bit, MSB first, 8 px/byte."""
+    width = bitmap.width
+    rows = bitmap.rows
+    pitch = bitmap.pitch
+    buf = bitmap.buffer
+    pixels = []
+    px = 0
+    total = width * rows
+    for y in range(rows):
+        row_offset = y * pitch
+        for x in range(width):
+            v = buf[row_offset + x] if row_offset + x < len(buf) else 0
+            px = (px << 1) | quantize_1bit(v)
+            if (y * width + x) % 8 == 7:
+                pixels.append(px)
+                px = 0
+    rem = total % 8
+    if rem != 0:
+        px <<= (8 - rem)
+        pixels.append(px)
+    return pixels
+
+def convert_ttf_to_epdfont(font_files, font_name, size, output_path, additional_intervals=None, is_2bit=False, force_autohint=False):
     """Convert TTF font to .epdfont binary format."""
 
     font_stack = [freetype.Face(f) for f in font_files]
@@ -46,6 +113,10 @@ def convert_ttf_to_epdfont(font_files, font_name, size, output_path, additional_
     # Set font size (150 DPI)
     for face in font_stack:
         face.set_char_size(size << 6, size << 6, 150, 150)
+
+    load_flags = freetype.FT_LOAD_RENDER | freetype.FT_LOAD_TARGET_NORMAL
+    if force_autohint:
+        load_flags |= freetype.FT_LOAD_FORCE_AUTOHINT
 
     # Default Unicode intervals
     intervals = [
@@ -111,7 +182,7 @@ def convert_ttf_to_epdfont(font_files, font_name, size, output_path, additional_
     for i_start, i_end in merged_intervals:
         start = i_start
         for code_point in range(i_start, i_end + 1):
-            face = load_glyph(font_stack, code_point)
+            face = load_glyph(font_stack, code_point, load_flags)
             if face is None:
                 if start < code_point:
                     validated_intervals.append((start, code_point - 1))
@@ -127,77 +198,24 @@ def convert_ttf_to_epdfont(font_files, font_name, size, output_path, additional_
 
     for i_start, i_end in validated_intervals:
         for code_point in range(i_start, i_end + 1):
-            face = load_glyph(font_stack, code_point)
+            face = load_glyph(font_stack, code_point, load_flags)
             if face is None:
                 continue
 
             bitmap = face.glyph.bitmap
 
-            # Build 4-bit greyscale bitmap
-            pixels4g = []
-            px = 0
-            for i, v in enumerate(bitmap.buffer):
-                y = i // bitmap.width if bitmap.width > 0 else 0
-                x = i % bitmap.width if bitmap.width > 0 else 0
-                if x % 2 == 0:
-                    px = (v >> 4)
-                else:
-                    px = px | (v & 0xF0)
-                    pixels4g.append(px)
-                    px = 0
-                if bitmap.width > 0 and x == bitmap.width - 1 and bitmap.width % 2 > 0:
-                    pixels4g.append(px)
-                    px = 0
-
             if is_2bit:
-                # 2-bit greyscale
-                pixels2b = []
-                px = 0
-                pitch = (bitmap.width // 2) + (bitmap.width % 2)
-                for y in range(bitmap.rows):
-                    for x in range(bitmap.width):
-                        px = px << 2
-                        if pitch > 0 and len(pixels4g) > 0:
-                            bm = pixels4g[y * pitch + (x // 2)] if y * pitch + (x // 2) < len(pixels4g) else 0
-                            bm = (bm >> ((x % 2) * 4)) & 0xF
-                            if bm >= 12:
-                                px += 3
-                            elif bm >= 8:
-                                px += 2
-                            elif bm >= 4:
-                                px += 1
-                        if (y * bitmap.width + x) % 4 == 3:
-                            pixels2b.append(px)
-                            px = 0
-                if (bitmap.width * bitmap.rows) % 4 != 0:
-                    px = px << (4 - (bitmap.width * bitmap.rows) % 4) * 2
-                    pixels2b.append(px)
-                pixels = pixels2b
+                pixels = pack_2bit(bitmap)
             else:
-                # 1-bit black and white
-                pixelsbw = []
-                px = 0
-                pitch = (bitmap.width // 2) + (bitmap.width % 2)
-                for y in range(bitmap.rows):
-                    for x in range(bitmap.width):
-                        px = px << 1
-                        if pitch > 0 and len(pixels4g) > 0:
-                            idx = y * pitch + (x // 2)
-                            bm = pixels4g[idx] if idx < len(pixels4g) else 0
-                            px += 1 if ((x & 1) == 0 and bm & 0xE > 0) or ((x & 1) == 1 and bm & 0xE0 > 0) else 0
-                        if (y * bitmap.width + x) % 8 == 7:
-                            pixelsbw.append(px)
-                            px = 0
-                if (bitmap.width * bitmap.rows) % 8 != 0:
-                    px = px << (8 - (bitmap.width * bitmap.rows) % 8)
-                    pixelsbw.append(px)
-                pixels = pixelsbw
+                pixels = pack_1bit(bitmap)
 
             packed = bytes(pixels)
             glyph = GlyphProps(
                 width=bitmap.width,
                 height=bitmap.rows,
-                advance_x=norm_floor(face.glyph.advance.x),
+                # Round-to-nearest so sub-pixel advances do not accumulate as
+                # systematically tight spacing across a line of text.
+                advance_x=norm_round(face.glyph.advance.x),
                 left=face.glyph.bitmap_left,
                 top=face.glyph.bitmap_top,
                 data_length=len(packed),
@@ -208,7 +226,7 @@ def convert_ttf_to_epdfont(font_files, font_name, size, output_path, additional_
             all_glyphs.append((glyph, packed))
 
     # Get font metrics from pipe character
-    face = load_glyph(font_stack, ord('|'))
+    face = load_glyph(font_stack, ord('|'), load_flags)
     if face is None:
         face = font_stack[0]
 
@@ -295,6 +313,8 @@ def main():
     parser.add_argument('size', type=int, help='Font size in points')
     parser.add_argument('fontfiles', nargs='+', help='TTF/OTF font file(s), in priority order')
     parser.add_argument('--2bit', dest='is_2bit', action='store_true', help='Generate 2-bit greyscale instead of 1-bit')
+    parser.add_argument('--force-autohint', dest='force_autohint', action='store_true',
+                        help='Force the FreeType auto-hinter. Recommended for CFF-based CJK fonts at small pixel sizes where native hints are weak.')
     parser.add_argument('--additional-intervals', dest='additional_intervals', action='append',
                         help='Additional Unicode intervals as MIN,MAX (hex or decimal). Can be repeated.')
     parser.add_argument('-o', '--output', dest='output', help='Output .epdfont file path')
@@ -303,7 +323,7 @@ def main():
     output_path = args.output if args.output else f"{args.name}_{args.size}.epdfont"
 
     print(f"Converting {args.fontfiles[0]} to {output_path}")
-    print(f"Font: {args.name}, Size: {args.size}pt, Mode: {'2-bit' if args.is_2bit else '1-bit'}")
+    print(f"Font: {args.name}, Size: {args.size}pt, Mode: {'2-bit' if args.is_2bit else '1-bit'}, Autohint: {args.force_autohint}")
     print("")
 
     success = convert_ttf_to_epdfont(
@@ -312,7 +332,8 @@ def main():
         args.size,
         output_path,
         args.additional_intervals,
-        args.is_2bit
+        args.is_2bit,
+        args.force_autohint,
     )
 
     if success:
