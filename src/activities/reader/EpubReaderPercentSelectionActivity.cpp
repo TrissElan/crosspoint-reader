@@ -86,7 +86,7 @@ void EpubReaderPercentSelectionActivity::render(RenderLock&&) {
     renderer.fillRect(knobX, barY - 4, 4, barHeight + 8, true);
 
     // Hint text for step sizes.
-    renderer.drawCenteredText(SMALL_FONT_ID, barY + 30, tr(STR_PERCENT_STEP_HINT), true);
+    renderer.drawCenteredText(UI_12_FONT_ID, barY + 30, tr(STR_PERCENT_STEP_HINT), true);
 
     // Button hints follow the current front button layout.
     const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_SELECT), "-", "+");

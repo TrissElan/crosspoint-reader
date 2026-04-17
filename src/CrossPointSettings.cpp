@@ -115,6 +115,7 @@ int CrossPointSettings::getRefreshFrequency() const {
 
 int CrossPointSettings::getReaderFontId() const {
   if (strcmp(customFontPath, "builtin:10") == 0) return PRETENDARD_10_FONT_ID;
+  if (strcmp(customFontPath, "builtin:12") == 0) return PRETENDARD_12_FONT_ID;
   if (strcmp(customFontPath, "builtin:14") == 0) return PRETENDARD_14_FONT_ID;
   if (strcmp(customFontPath, "builtin:kopub10") == 0) return KOPUB_10_FONT_ID;
   if (strcmp(customFontPath, "builtin:kopub12") == 0) return KOPUB_12_FONT_ID;

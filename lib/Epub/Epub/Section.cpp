@@ -71,6 +71,7 @@ bool Section::loadSectionFile(const SectionLayoutParams& params) {
     uint8_t version;
     serialization::readPod(file, version);
     if (version != SECTION_FILE_VERSION) {
+      // Explicit close() required: member variable persists beyond function scope
       file.close();
       LOG_ERR("SCT", "Deserialization failed: Unknown version %u", version);
       clearCache();
@@ -112,6 +113,7 @@ bool Section::loadSectionFile(const SectionLayoutParams& params) {
   }
 
   serialization::readPod(file, pageCount);
+  // Explicit close() required: member variable persists beyond function scope
   file.close();
   LOG_DBG("SCT", "Deserialization succeeded: %d pages", pageCount);
   return true;
@@ -163,6 +165,7 @@ bool Section::createSectionFile(const SectionLayoutParams& params, const std::fu
     }
     success = epub->readItemContentsToStream(localPath, tmpHtml, 1024);
     fileSize = tmpHtml.size();
+    // Explicitly close() file before calling Storage.remove()
     tmpHtml.close();
 
     // If streaming failed, remove the incomplete file immediately
@@ -212,6 +215,7 @@ bool Section::createSectionFile(const SectionLayoutParams& params, const std::fu
   Storage.remove(tmpHtmlPath.c_str());
   if (!success) {
     LOG_ERR("SCT", "Failed to parse XML and build pages");
+    // Explicitly close() file before calling Storage.remove()
     file.close();
     Storage.remove(filePath.c_str());
     if (cssParser) {
@@ -233,6 +237,7 @@ bool Section::createSectionFile(const SectionLayoutParams& params, const std::fu
 
   if (hasFailedLutRecords) {
     LOG_ERR("SCT", "Failed to write LUT due to invalid page positions");
+    // Explicitly close() file before calling Storage.remove()
     file.close();
     Storage.remove(filePath.c_str());
     return false;
@@ -252,6 +257,7 @@ bool Section::createSectionFile(const SectionLayoutParams& params, const std::fu
   serialization::writePod(file, pageCount);
   serialization::writePod(file, lutOffset);
   serialization::writePod(file, anchorMapOffset);
+  // Explicit close() required: member variable persists beyond function scope
   file.close();
   if (cssParser) {
     cssParser->clear();
@@ -273,6 +279,7 @@ std::unique_ptr<Page> Section::loadPageFromSectionFile() {
   file.seek(pagePos);
 
   auto page = Page::deserialize(file);
+  // Explicit close() required: member variable persists beyond function scope
   file.close();
   return page;
 }
@@ -288,7 +295,6 @@ std::optional<uint16_t> Section::getPageForAnchor(const std::string& anchor) con
   uint32_t anchorMapOffset;
   serialization::readPod(f, anchorMapOffset);
   if (anchorMapOffset == 0 || anchorMapOffset >= fileSize) {
-    f.close();
     return std::nullopt;
   }
 
@@ -301,11 +307,9 @@ std::optional<uint16_t> Section::getPageForAnchor(const std::string& anchor) con
     serialization::readString(f, key);
     serialization::readPod(f, page);
     if (key == anchor) {
-      f.close();
       return page;
     }
   }
 
-  f.close();
   return std::nullopt;
 }

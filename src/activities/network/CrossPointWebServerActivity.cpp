@@ -269,7 +269,7 @@ void CrossPointWebServerActivity::renderServerRunning() const {
   // Show IP address as fallback
   renderer.drawText(UI_12_FONT_ID, metrics.contentSidePadding + QR_CODE_WIDTH + metrics.verticalSpacing, startY + 80,
                     hostnameUrl.c_str());
-  renderer.drawText(SMALL_FONT_ID, metrics.contentSidePadding + QR_CODE_WIDTH + metrics.verticalSpacing, startY + 110,
+  renderer.drawText(UI_12_FONT_ID, metrics.contentSidePadding + QR_CODE_WIDTH + metrics.verticalSpacing, startY + 110,
                     ipUrl.c_str());
 
   const auto labels = mappedInput.mapLabels(tr(STR_EXIT), "", "", "");

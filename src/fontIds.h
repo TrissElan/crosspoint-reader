@@ -10,6 +10,5 @@
 #define KOPUB_12_FONT_ID (-800100012)
 #define KOPUB_14_FONT_ID (-800100014)
 
-// Aliases for UI contexts
+// Aliases for UI contexts — all UI uses 12pt
 #define UI_12_FONT_ID  PRETENDARD_12_FONT_ID
-#define SMALL_FONT_ID  PRETENDARD_10_FONT_ID
