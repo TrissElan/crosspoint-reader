@@ -1,6 +1,6 @@
 #pragma once
 
-#include "state/MappedInputManager.h"
+#include "MappedInputManager.h"
 #include "activities/Activity.h"
 #include "util/ButtonNavigator.h"
 

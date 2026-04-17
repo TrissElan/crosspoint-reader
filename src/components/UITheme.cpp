@@ -6,9 +6,9 @@
 
 #include <memory>
 
-#include "state/MappedInputManager.h"
-#include "state/RecentBooksStore.h"
-#include "settings/CrossPointSettings.h"
+#include "MappedInputManager.h"
+#include "RecentBooksStore.h"
+#include "CrossPointSettings.h"
 #include "components/themes/BaseTheme.h"
 #include "components/themes/lyra/LyraTheme.h"
 

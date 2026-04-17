@@ -3,7 +3,7 @@
 #include <Epub.h>
 #include <FsHelpers.h>
 #include <HalStorage.h>
-#include "settings/JsonSettingsIO.h"
+#include "JsonSettingsIO.h"
 #include <Logging.h>
 #include <algorithm>
 

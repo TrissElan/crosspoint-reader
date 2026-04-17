@@ -1,7 +1,7 @@
 #include "CrossPointState.h"
 
 #include <HalStorage.h>
-#include "settings/JsonSettingsIO.h"
+#include "JsonSettingsIO.h"
 #include <Logging.h>
 
 namespace {

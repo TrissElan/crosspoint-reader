@@ -9,14 +9,14 @@
 #include <Logging.h>
 #include <esp_system.h>
 
-#include "settings/CrossPointSettings.h"
-#include "state/CrossPointState.h"
+#include "CrossPointSettings.h"
+#include "CrossPointState.h"
 #include "EpubReaderChapterSelectionActivity.h"
 #include "EpubReaderFootnotesActivity.h"
 #include "EpubReaderPercentSelectionActivity.h"
-#include "state/MappedInputManager.h"
+#include "MappedInputManager.h"
 #include "ReaderUtils.h"
-#include "state/RecentBooksStore.h"
+#include "RecentBooksStore.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 

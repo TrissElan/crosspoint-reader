@@ -1,6 +1,6 @@
 #include "MappedInputManager.h"
 
-#include "settings/CrossPointSettings.h"
+#include "CrossPointSettings.h"
 
 namespace {
 using ButtonIndex = uint8_t;

@@ -9,8 +9,8 @@
 #include <string>
 
 #include "CrossPointSettings.h"
-#include "state/CrossPointState.h"
-#include "state/RecentBooksStore.h"
+#include "CrossPointState.h"
+#include "RecentBooksStore.h"
 #include "SettingsList.h"
 
 // ---- CrossPointState ----

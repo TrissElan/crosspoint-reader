@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "settings/CrossPointSettings.h"
+#include "CrossPointSettings.h"
 #include "activities/Activity.h"
 #include "util/ButtonNavigator.h"
 

@@ -1,10 +1,10 @@
 #pragma once
 
-#include "settings/CrossPointSettings.h"
+#include "CrossPointSettings.h"
 #include <GfxRenderer.h>
 #include <Logging.h>
 
-#include "state/MappedInputManager.h"
+#include "MappedInputManager.h"
 
 namespace ReaderUtils {
 

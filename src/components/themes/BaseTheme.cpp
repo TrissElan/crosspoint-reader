@@ -9,8 +9,8 @@
 #include <string>
 
 #include "I18n.h"
-#include "state/RecentBooksStore.h"
-#include "settings/CrossPointSettings.h"
+#include "RecentBooksStore.h"
+#include "CrossPointSettings.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 

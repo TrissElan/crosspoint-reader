@@ -9,7 +9,7 @@
 #include "ActivityManager.h"  // for using the ActivityManager singleton
 #include "ActivityResult.h"
 #include "GfxRenderer.h"
-#include "state/MappedInputManager.h"
+#include "MappedInputManager.h"
 #include "RenderLock.h"
 
 class Activity {

@@ -7,10 +7,10 @@
 
 #include <vector>
 
-#include "settings/CrossPointSettings.h"
-#include "state/CrossPointState.h"
-#include "state/MappedInputManager.h"
-#include "state/RecentBooksStore.h"
+#include "CrossPointSettings.h"
+#include "CrossPointState.h"
+#include "MappedInputManager.h"
+#include "RecentBooksStore.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 

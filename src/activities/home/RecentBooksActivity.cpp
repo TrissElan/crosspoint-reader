@@ -6,8 +6,8 @@
 
 #include <algorithm>
 
-#include "state/MappedInputManager.h"
-#include "state/RecentBooksStore.h"
+#include "MappedInputManager.h"
+#include "RecentBooksStore.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 

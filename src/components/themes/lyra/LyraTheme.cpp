@@ -9,8 +9,8 @@
 #include <string>
 #include <vector>
 
-#include "settings/CrossPointSettings.h"
-#include "state/RecentBooksStore.h"
+#include "CrossPointSettings.h"
+#include "RecentBooksStore.h"
 #include "components/UITheme.h"
 #include "components/icons/book.h"
 #include "components/icons/book24.h"

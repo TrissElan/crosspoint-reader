@@ -5,7 +5,7 @@
 
 #include <algorithm>
 
-#include "state/MappedInputManager.h"
+#include "MappedInputManager.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 

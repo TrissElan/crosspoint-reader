@@ -3,7 +3,7 @@
 #include <functional>
 #include <vector>
 
-#include "state/MappedInputManager.h"
+#include "MappedInputManager.h"
 
 class ButtonNavigator final {
   using Callback = std::function<void()>;
