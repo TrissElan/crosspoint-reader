@@ -10,8 +10,8 @@
 #include "parsers/ChapterHtmlSlimParser.h"
 
 namespace {
-constexpr uint8_t SECTION_FILE_VERSION = 20;
-constexpr uint32_t HEADER_SIZE = sizeof(uint8_t) + sizeof(int) + sizeof(float) + sizeof(bool) + sizeof(uint8_t) +
+constexpr uint8_t SECTION_FILE_VERSION = 21;
+constexpr uint32_t HEADER_SIZE = sizeof(uint8_t) + sizeof(int) + sizeof(int) + sizeof(bool) + sizeof(uint8_t) +
                                  sizeof(bool) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(bool) +
                                  sizeof(bool) + sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint32_t);
 }  // namespace
@@ -38,7 +38,7 @@ void Section::writeSectionFileHeader(const SectionLayoutParams& params) {
     LOG_DBG("SCT", "File not open for writing header");
     return;
   }
-  static_assert(HEADER_SIZE == sizeof(SECTION_FILE_VERSION) + sizeof(params.fontId) + sizeof(params.lineCompression) +
+  static_assert(HEADER_SIZE == sizeof(SECTION_FILE_VERSION) + sizeof(params.fontId) + sizeof(params.lineSpacingOffset) +
                                    sizeof(params.extraParagraphSpacing) + sizeof(params.paragraphAlignment) +
                                    sizeof(params.characterWrap) + sizeof(params.viewportWidth) +
                                    sizeof(params.viewportHeight) + sizeof(pageCount) +
@@ -47,7 +47,7 @@ void Section::writeSectionFileHeader(const SectionLayoutParams& params) {
                 "Header size mismatch");
   serialization::writePod(file, SECTION_FILE_VERSION);
   serialization::writePod(file, params.fontId);
-  serialization::writePod(file, params.lineCompression);
+  serialization::writePod(file, params.lineSpacingOffset);
   serialization::writePod(file, params.extraParagraphSpacing);
   serialization::writePod(file, params.paragraphAlignment);
   serialization::writePod(file, params.characterWrap);
@@ -80,7 +80,7 @@ bool Section::loadSectionFile(const SectionLayoutParams& params) {
 
     int fileFontId;
     uint16_t fileViewportWidth, fileViewportHeight;
-    float fileLineCompression;
+    int fileLineSpacingOffset;
     bool fileExtraParagraphSpacing;
     uint8_t fileParagraphAlignment;
     bool fileCharacterWrap;
@@ -88,7 +88,7 @@ bool Section::loadSectionFile(const SectionLayoutParams& params) {
     bool fileEmbeddedStyle;
     uint8_t fileImageRendering;
     serialization::readPod(file, fileFontId);
-    serialization::readPod(file, fileLineCompression);
+    serialization::readPod(file, fileLineSpacingOffset);
     serialization::readPod(file, fileExtraParagraphSpacing);
     serialization::readPod(file, fileParagraphAlignment);
     serialization::readPod(file, fileCharacterWrap);
@@ -98,7 +98,7 @@ bool Section::loadSectionFile(const SectionLayoutParams& params) {
     serialization::readPod(file, fileEmbeddedStyle);
     serialization::readPod(file, fileImageRendering);
 
-    if (params.fontId != fileFontId || params.lineCompression != fileLineCompression ||
+    if (params.fontId != fileFontId || params.lineSpacingOffset != fileLineSpacingOffset ||
         params.extraParagraphSpacing != fileExtraParagraphSpacing ||
         params.paragraphAlignment != fileParagraphAlignment ||
         params.characterWrap != fileCharacterWrap ||
@@ -204,7 +204,7 @@ bool Section::createSectionFile(const SectionLayoutParams& params, const std::fu
   }
 
   ChapterHtmlSlimParser visitor(
-      epub, tmpHtmlPath, renderer, params.fontId, params.lineCompression, params.extraParagraphSpacing,
+      epub, tmpHtmlPath, renderer, params.fontId, params.lineSpacingOffset, params.extraParagraphSpacing,
       params.paragraphAlignment, params.characterWrap, params.viewportWidth, params.viewportHeight,
       params.hyphenationEnabled,
       [this, &lut](std::unique_ptr<Page> page) { lut.emplace_back(this->onPageComplete(std::move(page))); },

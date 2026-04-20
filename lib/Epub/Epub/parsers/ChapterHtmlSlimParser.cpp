@@ -1077,7 +1077,7 @@ bool ChapterHtmlSlimParser::parseAndBuildPages() {
 }
 
 void ChapterHtmlSlimParser::addLineToPage(std::shared_ptr<TextBlock> line) {
-  const int lineHeight = renderer.getLineHeight(fontId) * lineCompression;
+  const int lineHeight = renderer.getLineHeight(fontId) + lineSpacingOffset;
 
   if (!currentPage) {
     currentPage.reset(new Page());
@@ -1117,7 +1117,7 @@ void ChapterHtmlSlimParser::makePages() {
     currentPageNextY = 0;
   }
 
-  const int lineHeight = renderer.getLineHeight(fontId) * lineCompression;
+  const int lineHeight = renderer.getLineHeight(fontId) + lineSpacingOffset;
 
   // Apply top spacing before the paragraph (stored in pixels)
   const BlockStyle& blockStyle = currentTextBlock->getBlockStyle();

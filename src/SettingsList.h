@@ -26,14 +26,19 @@ inline const std::vector<SettingInfo>& getSettingsList() {
                         StrId::STR_CAT_DISPLAY),
       SettingInfo::Enum(
           StrId::STR_REFRESH_FREQ, &CrossPointSettings::refreshFrequency,
-          {StrId::STR_PAGES_1, StrId::STR_PAGES_5, StrId::STR_PAGES_10, StrId::STR_PAGES_15, StrId::STR_PAGES_30},
+          {StrId::STR_PAGES_1, StrId::STR_PAGES_3, StrId::STR_PAGES_5, StrId::STR_PAGES_7, StrId::STR_PAGES_9},
           "refreshFrequency", StrId::STR_CAT_DISPLAY),
       SettingInfo::Toggle(StrId::STR_SUNLIGHT_FADING_FIX, &CrossPointSettings::fadingFix, "fadingFix",
                           StrId::STR_CAT_DISPLAY),
 
       // --- Reader ---
       SettingInfo::Enum(StrId::STR_LINE_SPACING, &CrossPointSettings::lineSpacing,
-                        {StrId::STR_LS_095, StrId::STR_LS_100, StrId::STR_LS_110, StrId::STR_LS_120, StrId::STR_LS_130},
+                        {StrId::STR_LS_NEG_9, StrId::STR_LS_NEG_8, StrId::STR_LS_NEG_7, StrId::STR_LS_NEG_6,
+                         StrId::STR_LS_NEG_5, StrId::STR_LS_NEG_4, StrId::STR_LS_NEG_3, StrId::STR_LS_NEG_2,
+                         StrId::STR_LS_NEG_1, StrId::STR_LS_ZERO,
+                         StrId::STR_LS_POS_1, StrId::STR_LS_POS_2, StrId::STR_LS_POS_3, StrId::STR_LS_POS_4,
+                         StrId::STR_LS_POS_5, StrId::STR_LS_POS_6, StrId::STR_LS_POS_7, StrId::STR_LS_POS_8,
+                         StrId::STR_LS_POS_9},
                         "lineSpacing", StrId::STR_CAT_READER),
       SettingInfo::Value(StrId::STR_SCREEN_MARGIN, &CrossPointSettings::screenMargin, {5, 40, 5}, "screenMargin",
                          StrId::STR_CAT_READER),
@@ -63,7 +68,7 @@ inline const std::vector<SettingInfo>& getSettingsList() {
       SettingInfo::Toggle(StrId::STR_LONG_PRESS_SKIP, &CrossPointSettings::longPressChapterSkip, "longPressChapterSkip",
                           StrId::STR_CAT_CONTROLS),
       SettingInfo::Enum(StrId::STR_SHORT_PWR_BTN, &CrossPointSettings::shortPwrBtn,
-                        {StrId::STR_IGNORE, StrId::STR_SLEEP, StrId::STR_PAGE_TURN, StrId::STR_FORCE_REFRESH},
+                        {StrId::STR_IGNORE, StrId::STR_SLEEP, StrId::STR_PAGE_TURN},
                         "shortPwrBtn", StrId::STR_CAT_CONTROLS),
 
       // --- System ---

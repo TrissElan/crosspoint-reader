@@ -69,7 +69,14 @@ class CrossPointSettings {
   // Swapped: Next, Previous
   enum SIDE_BUTTON_LAYOUT { PREV_NEXT = 0, NEXT_PREV = 1, SIDE_BUTTON_LAYOUT_COUNT };
 
-  enum LINE_COMPRESSION { LS_095 = 0, LS_100 = 1, LS_110 = 2, LS_120 = 3, LS_130 = 4, LINE_COMPRESSION_COUNT };
+  enum LINE_SPACING_OFFSET {
+    LS_NEG_9 = 0, LS_NEG_8, LS_NEG_7, LS_NEG_6, LS_NEG_5,
+    LS_NEG_4, LS_NEG_3, LS_NEG_2, LS_NEG_1,
+    LS_ZERO,
+    LS_POS_1, LS_POS_2, LS_POS_3, LS_POS_4, LS_POS_5,
+    LS_POS_6, LS_POS_7, LS_POS_8, LS_POS_9,
+    LINE_SPACING_OFFSET_COUNT
+  };
   enum PARAGRAPH_ALIGNMENT {
     JUSTIFIED = 0,
     LEFT_ALIGN = 1,
@@ -92,15 +99,15 @@ class CrossPointSettings {
   // E-ink refresh frequency (pages between full refreshes)
   enum REFRESH_FREQUENCY {
     REFRESH_1 = 0,
-    REFRESH_5 = 1,
-    REFRESH_10 = 2,
-    REFRESH_15 = 3,
-    REFRESH_30 = 4,
+    REFRESH_3 = 1,
+    REFRESH_5 = 2,
+    REFRESH_7 = 3,
+    REFRESH_9 = 4,
     REFRESH_FREQUENCY_COUNT
   };
 
   // Short power button press actions
-  enum SHORT_PWRBTN { IGNORE = 0, SLEEP = 1, PAGE_TURN = 2, FORCE_REFRESH = 3, SHORT_PWRBTN_COUNT };
+  enum SHORT_PWRBTN { IGNORE = 0, SLEEP = 1, PAGE_TURN = 2, SHORT_PWRBTN_COUNT };
 
   // Hide battery percentage
   enum HIDE_BATTERY_PERCENTAGE { HIDE_NEVER = 0, HIDE_READER = 1, HIDE_ALWAYS = 2, HIDE_BATTERY_PERCENTAGE_COUNT };
@@ -137,12 +144,12 @@ class CrossPointSettings {
   uint8_t frontButtonLeft = FRONT_HW_LEFT;
   uint8_t frontButtonRight = FRONT_HW_RIGHT;
   // Reader font settings
-  uint8_t lineSpacing = LS_100;
+  uint8_t lineSpacing = LS_ZERO;
   uint8_t paragraphAlignment = JUSTIFIED;
   // Auto-sleep timeout setting (default 10 minutes)
   uint8_t sleepTimeout = SLEEP_10_MIN;
-  // E-ink refresh frequency (default 15 pages)
-  uint8_t refreshFrequency = REFRESH_15;
+  // E-ink refresh frequency (default 5 pages)
+  uint8_t refreshFrequency = REFRESH_5;
   uint8_t hyphenationEnabled = 0;
   uint8_t characterWrap = 1;
 
@@ -185,7 +192,7 @@ class CrossPointSettings {
 
   static void validateFrontButtonMapping(CrossPointSettings& settings);
 
-  float getReaderLineCompression() const;
+  int getReaderLineSpacingOffset() const;
   unsigned long getSleepTimeoutMs() const;
   int getRefreshFrequency() const;
 };

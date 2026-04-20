@@ -492,7 +492,7 @@ void EpubReaderActivity::render(RenderLock&& lock) {
     LOG_DBG("ERS", "Loading file: %s, index: %d", filepath.c_str(), currentSpineIndex);
     section = std::unique_ptr<Section>(new Section(epub, currentSpineIndex, renderer));
 
-    const SectionLayoutParams sectionParams{SETTINGS.getReaderFontId(), SETTINGS.getReaderLineCompression(),
+    const SectionLayoutParams sectionParams{SETTINGS.getReaderFontId(), SETTINGS.getReaderLineSpacingOffset(),
                                             static_cast<bool>(SETTINGS.extraParagraphSpacing),
                                             SETTINGS.paragraphAlignment,
                                             static_cast<bool>(SETTINGS.characterWrap), viewportWidth, viewportHeight,
@@ -619,7 +619,7 @@ void EpubReaderActivity::silentIndexNextChapterIfNeeded(const uint16_t viewportW
   }
 
   Section nextSection(epub, nextSpineIndex, renderer);
-  const SectionLayoutParams nextParams{SETTINGS.getReaderFontId(), SETTINGS.getReaderLineCompression(),
+  const SectionLayoutParams nextParams{SETTINGS.getReaderFontId(), SETTINGS.getReaderLineSpacingOffset(),
                                        static_cast<bool>(SETTINGS.extraParagraphSpacing),
                                        SETTINGS.paragraphAlignment,
                                        static_cast<bool>(SETTINGS.characterWrap), viewportWidth, viewportHeight,

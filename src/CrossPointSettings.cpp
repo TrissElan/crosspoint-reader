@@ -65,20 +65,8 @@ bool CrossPointSettings::loadFromFile() {
   return false;
 }
 
-float CrossPointSettings::getReaderLineCompression() const {
-  switch (lineSpacing) {
-    case LS_095:
-      return 0.95f;
-    case LS_100:
-    default:
-      return 1.0f;
-    case LS_110:
-      return 1.1f;
-    case LS_120:
-      return 1.2f;
-    case LS_130:
-      return 1.3f;
-  }
+int CrossPointSettings::getReaderLineSpacingOffset() const {
+  return static_cast<int>(lineSpacing) - 9;
 }
 
 unsigned long CrossPointSettings::getSleepTimeoutMs() const {
@@ -101,15 +89,15 @@ int CrossPointSettings::getRefreshFrequency() const {
   switch (refreshFrequency) {
     case REFRESH_1:
       return 1;
+    case REFRESH_3:
+      return 3;
     case REFRESH_5:
-      return 5;
-    case REFRESH_10:
-      return 10;
-    case REFRESH_15:
     default:
-      return 15;
-    case REFRESH_30:
-      return 30;
+      return 5;
+    case REFRESH_7:
+      return 7;
+    case REFRESH_9:
+      return 9;
   }
 }
 

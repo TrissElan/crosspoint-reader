@@ -11,7 +11,7 @@ class GfxRenderer;
 
 struct SectionLayoutParams {
   int fontId;
-  float lineCompression;
+  int lineSpacingOffset;
   bool extraParagraphSpacing;
   uint8_t paragraphAlignment;
   bool characterWrap;
