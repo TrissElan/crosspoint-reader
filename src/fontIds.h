@@ -2,11 +2,9 @@
 // Zero-copy: intervals read directly from Flash, no RAM allocation.
 #pragma once
 
-#define PRETENDARD_10_FONT_ID (-800000010)
 #define PRETENDARD_12_FONT_ID (-800000012)
 #define PRETENDARD_14_FONT_ID (-800000014)
 
-#define KOPUB_10_FONT_ID (-800100010)
 #define KOPUB_12_FONT_ID (-800100012)
 #define KOPUB_14_FONT_ID (-800100014)
 

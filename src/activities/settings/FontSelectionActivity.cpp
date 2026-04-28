@@ -88,14 +88,10 @@ void FontSelectionActivity::loadFontList() {
   fontNames.clear();
 
   // Built-in font options
-  fontFiles.emplace_back("builtin:10");
-  fontNames.emplace_back("Pretendard 10pt");
   fontFiles.emplace_back("builtin:12");
   fontNames.emplace_back("Pretendard 12pt");
   fontFiles.emplace_back("builtin:14");
   fontNames.emplace_back("Pretendard 14pt");
-  fontFiles.emplace_back("builtin:kopub10");
-  fontNames.emplace_back("KoPub Dotum 10pt");
   fontFiles.emplace_back("builtin:kopub12");
   fontNames.emplace_back("KoPub Dotum 12pt");
   fontFiles.emplace_back("builtin:kopub14");

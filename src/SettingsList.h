@@ -26,7 +26,7 @@ inline const std::vector<SettingInfo>& getSettingsList() {
                         StrId::STR_CAT_DISPLAY),
       SettingInfo::Enum(
           StrId::STR_REFRESH_FREQ, &CrossPointSettings::refreshFrequency,
-          {StrId::STR_PAGES_1, StrId::STR_PAGES_3, StrId::STR_PAGES_5, StrId::STR_PAGES_7, StrId::STR_PAGES_9},
+          {StrId::STR_PAGES_1, StrId::STR_PAGES_3, StrId::STR_PAGES_5, StrId::STR_PAGES_7, StrId::STR_PAGES_9, StrId::STR_PAGES_12, StrId::STR_PAGES_15},
           "refreshFrequency", StrId::STR_CAT_DISPLAY),
       SettingInfo::Toggle(StrId::STR_SUNLIGHT_FADING_FIX, &CrossPointSettings::fadingFix, "fadingFix",
                           StrId::STR_CAT_DISPLAY),

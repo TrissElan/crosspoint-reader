@@ -31,7 +31,7 @@ from ttf_to_epdfont import convert_ttf_to_epdfont  # noqa: E402
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 BUILTIN_DIR = os.path.join(SCRIPT_DIR, "..", "builtinFonts")
 
-DEFAULT_SIZES = [10, 12, 14]
+DEFAULT_SIZES = [12, 14]
 
 
 def load_codepoints(filename):
@@ -72,11 +72,17 @@ EDU_HANJA = load_codepoints("edu_hanja_1800.txt")
 
 # Additional Unicode intervals beyond the converter's defaults.
 INTERVALS = [
+    "0x0180,0x02FF",   # Latin Extended-B + IPA Extensions + Spacing Modifier
+    "0x2070,0x218F",   # Superscripts/Subscripts + Letterlike + Number Forms
+    "0x2460,0x26FF",   # ①②③ / ─│┌ / ▀▄█ / ■□▲ / ☆★✓♠
+    "0x2700,0x27BF",   # Dingbats (✓✗✔✕✈✉ 등)
     "0x3000,0x303F",   # CJK Symbols and Punctuation
     "0x3040,0x309F",   # Hiragana
     "0x30A0,0x30FF",   # Katakana
     "0x31F0,0x31FF",   # Katakana Phonetic Extensions
     "0x3131,0x314E",   # Hangul Compatibility Jamo (consonants area)
+    "0x3200,0x33FF",   # Enclosed CJK + Compatibility (㈎ / ㎜㎝㎞㎏㎖㎡)
+    "0xFF00,0xFFEF",   # Halfwidth/Fullwidth Forms (ａｂｃ / ｦｧｨ 등)
 ] + codepoints_to_intervals(KR0_HANGUL) + codepoints_to_intervals(EDU_HANJA)
 
 
@@ -126,7 +132,7 @@ def main():
         if os.path.exists(output):
             fsize = os.path.getsize(output)
             total_bytes += fsize
-            print(f"Done in {elapsed:.1f}s — {fsize:,} bytes ({fsize/1024/1024:.2f} MB)\n")
+            print(f"Done in {elapsed:.1f}s - {fsize:,} bytes ({fsize/1024/1024:.2f} MB)\n")
         else:
             print(f"ERROR: Output file was not created!", file=sys.stderr)
             sys.exit(1)

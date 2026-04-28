@@ -103,6 +103,8 @@ class CrossPointSettings {
     REFRESH_5 = 2,
     REFRESH_7 = 3,
     REFRESH_9 = 4,
+    REFRESH_12 = 5,
+    REFRESH_15 = 6,
     REFRESH_FREQUENCY_COUNT
   };
 

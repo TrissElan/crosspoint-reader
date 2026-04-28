@@ -29,31 +29,23 @@ MappedInputManager mappedInputManager(gpio);
 GfxRenderer renderer(display);
 ActivityManager activityManager(renderer, mappedInputManager);
 
-// Pretendard 10/12/14pt + KoPub Dotum 10/12/14pt (2-bit) embedded in Flash via .incbin assembly.
+// Pretendard 12/14pt + KoPub Dotum 12/14pt (2-bit) embedded in Flash via .incbin assembly.
 // Zero-copy: intervals read directly from Flash, no RAM allocation for font data.
-extern const uint8_t _binary_pretendard_10_epdfont_start[];
-extern const uint8_t _binary_pretendard_10_epdfont_end[];
 extern const uint8_t _binary_pretendard_12_epdfont_start[];
 extern const uint8_t _binary_pretendard_12_epdfont_end[];
 extern const uint8_t _binary_pretendard_14_epdfont_start[];
 extern const uint8_t _binary_pretendard_14_epdfont_end[];
 
-extern const uint8_t _binary_kopub_10_epdfont_start[];
-extern const uint8_t _binary_kopub_10_epdfont_end[];
 extern const uint8_t _binary_kopub_12_epdfont_start[];
 extern const uint8_t _binary_kopub_12_epdfont_end[];
 extern const uint8_t _binary_kopub_14_epdfont_start[];
 extern const uint8_t _binary_kopub_14_epdfont_end[];
 
 // Global EmbeddedFont / EmbeddedFontFamily for each embedded size.
-EmbeddedFont* gCjkFont10 = nullptr;
-EmbeddedFontFamily* gCjkFontFamily10 = nullptr;
 EmbeddedFont* gCjkFont12 = nullptr;
 EmbeddedFontFamily* gCjkFontFamily12 = nullptr;
 EmbeddedFont* gCjkFont14 = nullptr;
 EmbeddedFontFamily* gCjkFontFamily14 = nullptr;
-EmbeddedFont* gKopubFont10 = nullptr;
-EmbeddedFontFamily* gKopubFontFamily10 = nullptr;
 EmbeddedFont* gKopubFont12 = nullptr;
 EmbeddedFontFamily* gKopubFontFamily12 = nullptr;
 EmbeddedFont* gKopubFont14 = nullptr;
@@ -101,15 +93,11 @@ void setupDisplayAndFonts() {
     renderer.insertEmbeddedFont(fontId, family);
   };
 
-  loadEmbeddedFont(_binary_pretendard_10_epdfont_start, _binary_pretendard_10_epdfont_end,
-                   gCjkFont10, gCjkFontFamily10, PRETENDARD_10_FONT_ID, "Pretendard 10pt");
   loadEmbeddedFont(_binary_pretendard_12_epdfont_start, _binary_pretendard_12_epdfont_end,
                    gCjkFont12, gCjkFontFamily12, PRETENDARD_12_FONT_ID, "Pretendard 12pt");
   loadEmbeddedFont(_binary_pretendard_14_epdfont_start, _binary_pretendard_14_epdfont_end,
                    gCjkFont14, gCjkFontFamily14, PRETENDARD_14_FONT_ID, "Pretendard 14pt");
 
-  loadEmbeddedFont(_binary_kopub_10_epdfont_start, _binary_kopub_10_epdfont_end,
-                   gKopubFont10, gKopubFontFamily10, KOPUB_10_FONT_ID, "KoPub Dotum 10pt");
   loadEmbeddedFont(_binary_kopub_12_epdfont_start, _binary_kopub_12_epdfont_end,
                    gKopubFont12, gKopubFontFamily12, KOPUB_12_FONT_ID, "KoPub Dotum 12pt");
   loadEmbeddedFont(_binary_kopub_14_epdfont_start, _binary_kopub_14_epdfont_end,
